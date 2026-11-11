@@ -49,8 +49,10 @@ footer{padding:16px;font-size:13px;color:var(--mute)}
   <h1>Suivi de cycle</h1>
   <p>Choisissez une phrase secrète d’au moins 8 caractères. Elle chiffre vos données et ne quitte jamais ce téléphone. Utilisez exactement la même sur les deux téléphones et notez-la quelque part : sans elle, les données sont perdues.</p>
   <label>Phrase secrète<input id="pass" type="password" autocomplete="off"></label>
+  <label class="chk"><input id="rem" type="checkbox" checked>Rester déverrouillé sur ce téléphone</label>
   <button id="go">Déverrouiller</button>
   <p id="lockmsg" role="alert" class="small"></p>
+  <button id="rst2" class="alt" hidden>Réinitialiser cet appareil</button>
 </main>
 
 <main id="app" hidden>
@@ -60,6 +62,7 @@ footer{padding:16px;font-size:13px;color:var(--mute)}
     <h2>Saisie du jour</h2>
     <label>Date<input id="date" type="date"></label>
     <label>Température au réveil (°C)<input id="temp" inputmode="decimal" placeholder="36,45"></label>
+    <label>Heure de la mesure<input id="hour" type="time"></label>
     <label>Glaire
       <select id="mucus">
         <option value="">Non notée</option>
@@ -75,6 +78,7 @@ footer{padding:16px;font-size:13px;color:var(--mute)}
 
   <section>
     <h2>Courbe du cycle</h2>
+    <label class="chk"><input id="corr" type="checkbox" checked>Corriger selon l’heure de mesure</label>
     <div id="chart"></div>
     <p class="small">La zone jaune montre la période fertile estimée. La ligne pointillée apparaît quand le décalage thermique est détecté.</p>
   </section>
@@ -102,12 +106,17 @@ footer{padding:16px;font-size:13px;color:var(--mute)}
     <details>
       <summary>Sauvegarde</summary>
       <button id="exp" class="alt">Exporter (fichier chiffré)</button>
-      <label>Importer un fichier<input id="imp" type="file"></label>
+      <label>Importer une sauvegarde (fichier chiffré)<input id="imp" type="file"></label>
+      <label>Importer mes données depuis « cler » (CSV ou JSON)<input id="impx" type="file" accept=".csv,.json,.txt"></label>
+      <label>Nouvelle phrase secrète<input id="np" type="password" autocomplete="off"></label>
+      <button id="chg" class="alt">Changer la phrase secrète</button>
+      <button id="rst" class="alt">Réinitialiser cet appareil</button>
+      <p id="bkmsg" class="small" role="status"></p>
       <button id="lockbtn" class="alt">Verrouiller</button>
     </details>
   </section>
 
-  <footer>Estimation indicative : cette application ne remplace pas une méthode contraceptive. Version 1.0.0</footer>
+  <footer>Estimation indicative : cette application ne remplace pas une méthode contraceptive. Version 1.2.0</footer>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
@@ -144,6 +153,7 @@ const addDays=(s,n)=>{const d=day(s);d.setDate(d.getDate()+n);return fmt(d)};
 const diff=(a,b)=>Math.round((day(a)-day(b))/864e5);
 const fr=d=>d.slice(8)+"/"+d.slice(5,7);
 const num=t=>t.toFixed(2).replace(".",",");
+const nowHM=()=>{const d=new Date();return pad(d.getHours())+":"+pad(d.getMinutes());};
 
 /* Décalage thermique : 3 températures au-dessus des 6 précédentes, la 3ᵉ d’au moins 0,2 °C */
 function shift(T){
@@ -154,8 +164,14 @@ function shift(T){
   return null;
 }
 
+/* Correction horaire : environ 0,1 °C par heure d’écart avec votre heure habituelle (la médiane de vos mesures) */
+const COEF=0.1;let href=null;
+const mins=h=>+h.slice(0,2)*60+ +h.slice(3,5);
+function refHour(){const m=Object.values(data).filter(e=>e.h).map(e=>mins(e.h)).sort((a,b)=>a-b);href=m.length?m[Math.floor(m.length/2)]:null;}
+function adj(e){return $("#corr").checked&&e.h&&href!=null?e.t-COEF*(mins(e.h)-href)/60:e.t;}
+
 function render(){
-  const t=today();
+  const t=today();refHour();
   const starts=Object.keys(data).filter(d=>data[d].p&&!(data[addDays(d,-1)]&&data[addDays(d,-1)].p)).sort();
   let L=28;
   if(starts.length>1){
@@ -171,7 +187,7 @@ function render(){
     $("#chart").innerHTML="";
   }else{
     const n=diff(t,cs)+1,ovu=L-14;
-    const T=Object.keys(data).filter(d=>d>=cs&&data[d].t!=null).sort().map(d=>({d,t:data[d].t,n:diff(d,cs)+1}));
+    const T=Object.keys(data).filter(d=>d>=cs&&data[d].t!=null).sort().map(d=>({d,t:adj(data[d]),n:diff(d,cs)+1}));
     const sh=shift(T);
     let cls,a,b,fa,fb;
     if(sh){
@@ -193,7 +209,7 @@ function render(){
   const keys=Object.keys(data).sort().reverse().slice(0,14);
   $("#hist").innerHTML=keys.length?keys.map(d=>{
     const e=data[d];
-    return "<li><b>"+fr(d)+"</b><span>"+(e.t!=null?num(e.t)+" °C":"pas de température")+"</span>"+(e.m?"<span>glaire "+e.m+"</span>":"")+(e.p?"<span class=r>règles</span>":"")+"</li>";
+    return "<li><b>"+fr(d)+"</b><span>"+(e.t!=null?num(e.t)+" °C"+(e.h?" à "+e.h:"")+(adj(e)!==e.t?" (corrigée "+num(adj(e))+")":""):"pas de température")+"</span>"+(e.m?"<span>glaire "+e.m+"</span>":"")+(e.p?"<span class=r>règles</span>":"")+"</li>";
   }).join(""):"<li><span>Aucune saisie pour l’instant.</span></li>";
 }
 
@@ -220,6 +236,7 @@ function drawChart(T,sh,N,fa,fb,cs){
 function fill(){
   const e=data[$("#date").value]||{};
   $("#temp").value=e.t!=null?num(e.t):"";
+  $("#hour").value=e.h||nowHM();
   $("#mucus").value=e.m||"";
   $("#period").checked=!!e.p;
 }
@@ -228,9 +245,16 @@ $("#save").onclick=async()=>{
   const d=$("#date").value;if(!d)return;
   const t=parseFloat($("#temp").value.replace(",","."));
   if(!isNaN(t)&&(t<34||t>42)){$("#savemsg").textContent="Température hors limites (34 à 42 °C).";return;}
-  data[d]={t:isNaN(t)?null:t,m:$("#mucus").value,p:$("#period").checked,u:Date.now()};
+  const h=$("#hour").value||null;
+  data[d]={t:isNaN(t)?null:t,h,m:$("#mucus").value,p:$("#period").checked,u:Date.now()};
   await persist();render();$("#savemsg").textContent="Enregistré";sync();
 };
+
+/* Clé mémorisée sur l’appareil (non exportable) pour ne plus retaper la phrase */
+const idb=()=>new Promise((res,rej)=>{const r=indexedDB.open("suivi",1);r.onupgradeneeded=()=>r.result.createObjectStore("k");r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});
+async function kput(k){const d=await idb();return new Promise((res,rej)=>{const t=d.transaction("k","readwrite");t.objectStore("k").put(k,"key");t.oncomplete=res;t.onerror=()=>rej(t.error);});}
+async function kget(){const d=await idb();return new Promise((res,rej)=>{const r=d.transaction("k").objectStore("k").get("key");r.onsuccess=()=>res(r.result||null);r.onerror=()=>rej(r.error);});}
+async function kdel(){const d=await idb();return new Promise(res=>{const t=d.transaction("k","readwrite");t.objectStore("k").delete("key");t.oncomplete=res;t.onerror=res;});}
 
 /* Déverrouillage */
 $("#go").onclick=async()=>{
@@ -238,14 +262,26 @@ $("#go").onclick=async()=>{
   if(p.length<8){$("#lockmsg").textContent="Utilisez au moins 8 caractères.";return;}
   key=await derive(p);
   const blob=localStorage.getItem("blob");
-  if(blob){try{data=await unseal(blob)}catch{key=null;$("#lockmsg").textContent="Phrase secrète incorrecte.";return;}}
+  if(blob){try{data=await unseal(blob)}catch{key=null;$("#lockmsg").textContent="Phrase secrète incorrecte. Si vous l’avez changée sur l’autre téléphone, réinitialisez cet appareil.";$("#rst2").hidden=false;return;}}
+  try{if($("#rem").checked)await kput(key);else await kdel();}catch{}
+  start();
+};
+function start(){
   $("#lock").hidden=true;$("#app").hidden=false;
-  $("#date").value=today();fill();render();
+  $("#corr").checked=cfg.corr!==false;$("#date").value=today();fill();render();
   ["url","key","email"].forEach(k=>$("#"+k).value=cfg[k]||"");
   sync();
-};
+}
+async function autoUnlock(){
+  try{
+    const k=await kget();if(!k)return;
+    key=k;const blob=localStorage.getItem("blob");
+    if(blob)data=await unseal(blob);
+    start();
+  }catch{key=null;try{await kdel();}catch{}}
+}
 $("#pass").onkeydown=e=>{if(e.key==="Enter")$("#go").click()};
-$("#lockbtn").onclick=()=>location.reload();
+$("#lockbtn").onclick=async()=>{try{await kdel();}catch{}location.reload();};
 
 /* Partage via Supabase (les données y arrivent déjà chiffrées) */
 const say=m=>$("#syncmsg").textContent=m;
@@ -255,7 +291,7 @@ function client(){
   sb=supabase.createClient(cfg.url,cfg.key);return sb;
 }
 function saveCfg(){
-  cfg={url:$("#url").value.trim(),key:$("#key").value.trim(),email:$("#email").value.trim()};
+  cfg={...cfg,url:$("#url").value.trim(),key:$("#key").value.trim(),email:$("#email").value.trim()};
   localStorage.setItem("cfg",JSON.stringify(cfg));sb=null;
 }
 async function auth(kind){
@@ -269,15 +305,16 @@ async function auth(kind){
 $("#signup").onclick=()=>auth("up");
 $("#signin").onclick=()=>auth("in");
 $("#syncnow").onclick=()=>{saveCfg();sync();};
-async function sync(){
+async function sync(force){
   const c=client();if(!c)return;
   const {data:s}=await c.auth.getSession();
   if(!s.session){say("Non connecté.");return;}
   try{
-    const {data:rows,error}=await c.from("entries").select("day,payload");
-    if(error)throw error;
+    let rows=[];
+    if(force){const {error:e0}=await c.from("entries").delete().eq("user_id",s.session.user.id);if(e0)throw e0;}
+    else{const q=await c.from("entries").select("day,payload");if(q.error)throw q.error;rows=q.data;}
     for(const r of rows){
-      let e;try{e=await unseal(r.payload)}catch{say("La phrase secrète diffère de celle utilisée pour les données en ligne.");return;}
+      let e;try{e=await unseal(r.payload)}catch{say("La phrase secrète diffère de celle des données en ligne. Si elle a été changée sur l’autre téléphone, utilisez « Réinitialiser cet appareil ».");return;}
       if(!data[r.day]||e.u>data[r.day].u)data[r.day]=e;
     }
     const up=[];
@@ -303,6 +340,114 @@ $("#imp").onchange=async e=>{
   }catch{$("#savemsg").textContent="Fichier illisible ou phrase secrète différente.";}
 };
 
+/* Changer la phrase secrète / réinitialiser l’appareil */
+$("#chg").onclick=async()=>{
+  const p=$("#np").value,m=$("#bkmsg");
+  if(p.length<8){m.textContent="Utilisez au moins 8 caractères.";return;}
+  if(p===$("#pw").value){m.textContent="Choisissez une phrase différente du mot de passe du compte.";return;}
+  if(client()){
+    await sync();
+    if(!/^Synchronisé/.test($("#syncmsg").textContent)){m.textContent="Synchronisez d’abord sans erreur, puis réessayez.";return;}
+  }
+  if(!confirm("Changer la phrase secrète ? L’autre téléphone devra être réinitialisé, puis déverrouillé avec la nouvelle phrase."))return;
+  key=await derive(p);await persist();$("#np").value="";
+  try{if(await kget())await kput(key);}catch{}
+  if(client())await sync(true);
+  m.textContent="Phrase secrète changée. Notez-la, puis réinitialisez l’autre téléphone.";
+};
+function resetDevice(){
+  if(!confirm("Effacer les données de cet appareil ? Elles seront récupérées depuis le compte en ligne : la synchronisation doit être en place, sinon elles sont perdues."))return;
+  kdel().catch(()=>{}).then(()=>{localStorage.removeItem("blob");location.reload();});
+}
+$("#rst").onclick=$("#rst2").onclick=resetDevice;
+$("#corr").onchange=()=>{cfg.corr=$("#corr").checked;localStorage.setItem("cfg",JSON.stringify(cfg));render();};
+
+/* Import depuis un autre site : CSV ou JSON, colonnes reconnues d’après leurs noms */
+const dkey=/date|jour|day/i,tkey=/temp/i,hkey=/heure|hour|time/i,mkey=/glaire|mucus|cervical|fluid|discharge/i,pkey=/r[eè]gle|period|menstru|flow|bleed/i,no=/^(0|non|no|false|none|aucun|null|undefined|)$/i;
+function pdate(s){
+  s=String(s).trim();let m;
+  if(m=s.match(/^(\d{4})-(\d{2})-(\d{2})/))return m[1]+"-"+m[2]+"-"+m[3];
+  if(m=s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})/))return m[3]+"-"+pad(+m[2])+"-"+pad(+m[1]);
+  return null;
+}
+function pmucus(v){
+  v=String(v).toLowerCase();
+  if(/egg|filant|stretch|blanc|clear|watery|aqueu|lastique/.test(v))return"filant";
+  if(/cream|cr[eé]m|sticky|collant|lotion|humide|wet|moist/.test(v))return"crémeuse";
+  if(/dry|s[eè]che|aucune|none|absent/.test(v))return"seche";
+  return"";
+}
+function flat(o,p,out){
+  out=out||{};
+  if(o&&typeof o==="object")for(const k in o)flat(o[k],p?p+"."+k:k,out);else out[p]=o;
+  return out;
+}
+function collect(o,acc){
+  if(Array.isArray(o))o.forEach(x=>collect(x,acc));
+  else if(o&&typeof o==="object"){
+    if(Object.keys(o).some(k=>typeof o[k]==="string"&&pdate(o[k])))acc.push(flat(o,""));
+    else for(const k in o){
+      if(pdate(k)&&o[k]&&typeof o[k]==="object")acc.push({date:k,...flat(o[k],"")});
+      else collect(o[k],acc);
+    }
+  }
+  return acc;
+}
+function csv(txt){
+  const L=txt.replace(/^\uFEFF/,"").split(/\r?\n/).filter(x=>x.trim());
+  const sep=[";","\t",","].find(c=>L[0].includes(c))||",";
+  const sp=l=>l.split(sep).map(x=>x.replace(/^"|"$/g,"").trim());
+  const H=sp(L[0]);
+  return L.slice(1).map(l=>{const c=sp(l),o={};H.forEach((h,i)=>o[h]=c[i]);return o;});
+}
+function toEntry(f){
+  let d=null,t=null,h=null,m="",p=false;
+  const typ=typeof f.type==="string"?f.type:"";
+  for(const k in f){
+    const v=f[k];if(v==null||v==="")continue;
+    const label=k+" "+typ,sv=String(v).trim();
+    if(!d&&dkey.test(k)&&pdate(v)){d=pdate(v);const hm=sv.match(/[T ](\d{2}):(\d{2})/);if(hm)h=hm[1]+":"+hm[2];}
+    else if(hkey.test(k)&&/^\d{1,2}:\d{2}/.test(sv))h=sv.length<5?"0"+sv.slice(0,4):sv.slice(0,5);
+    else if(tkey.test(label)){
+      let x=parseFloat(sv.replace(",","."));
+      if(x>93&&x<108)x=(x-32)*5/9;
+      if(x>=34&&x<=42)t=Math.round(x*100)/100;
+    }
+    else if(mkey.test(label)){m=pmucus(sv)||m;}
+    else if(pkey.test(label)&&!no.test(sv)&&k!=="type")p=true;
+  }
+  return d?{d,t,h,m,p}:null;
+}
+$("#impx").onchange=async e=>{
+  const f=e.target.files[0];if(!f)return;
+  const msg=$("#bkmsg");
+  try{
+    const txt=await f.text();let R;
+    try{R=collect(JSON.parse(txt),[])}catch{R=csv(txt)}
+    const agg={};
+    R.forEach(r=>{
+      const x=toEntry(r);if(!x)return;
+      const a=agg[x.d]||(agg[x.d]={});
+      if(x.t!=null&&a.t==null)a.t=x.t;
+      if(x.h&&!a.h)a.h=x.h;
+      if(x.m&&!a.m)a.m=x.m;
+      if(x.p)a.p=true;
+    });
+    let n=0;
+    for(const d in agg){
+      const a=agg[d],o=data[d]||{};
+      data[d]={t:o.t!=null?o.t:(a.t!=null?a.t:null),h:o.h||a.h||null,m:o.m||a.m||"",p:!!(o.p||a.p),u:Date.now()};n++;
+    }
+    if(!n){msg.textContent="Aucune donnée reconnue. Envoyez-moi quelques lignes du fichier pour que j’adapte l’import.";return;}
+    await persist();render();msg.textContent=n+" jours importés. Vos saisies existantes ont été conservées.";sync();
+  }catch(err){msg.textContent="Import impossible : "+err.message;}
+  e.target.value="";
+};
+
+document.addEventListener("visibilitychange",()=>{
+  if(!document.hidden&&!$("#app").hidden&&!(data[$("#date").value]||{}).h)$("#hour").value=nowHM();
+});
+autoUnlock();
 if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js");
 </script>
 </body>
