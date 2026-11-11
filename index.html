@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#16323B">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg">
+<title>Suivi de cycle</title>
+<style>
+:root{--bg:#eef3f2;--surf:#fff;--ink:#16323b;--mute:#58727a;--line:#d3dedd;--acc:#14797a;--hi:#f6dfa9;--lo:#cfe8e4;--mid:#e3e9e8;--per:#c2493d;box-sizing:border-box;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0f1e23;--surf:#172a30;--ink:#e6efee;--mute:#93aaa9;--line:#2a4249;--acc:#4cc2bf;--hi:#5a4a1d;--lo:#1d4a47;--mid:#22363c;--per:#ef7d70}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:480px;margin:0 auto;padding:0 0 32px}
+h1{font-size:26px;margin:0 0 12px}
+h2{font-size:18px;margin:0 0 12px}
+section{padding:20px 16px;border-bottom:1px solid var(--line)}
+#lock{padding:48px 16px}
+label{display:block;margin:0 0 14px;color:var(--mute);font-size:14px}
+input,select,button{font:inherit;width:100%;margin-top:4px;padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--surf);color:var(--ink)}
+input[type=checkbox]{width:auto;margin:0 8px 0 0;transform:scale(1.3)}
+.chk{display:flex;align-items:center;color:var(--ink);font-size:16px}
+button{background:var(--acc);color:#fff;border:0;font-weight:600;margin-top:8px;cursor:pointer}
+button.alt{background:transparent;color:var(--acc);border:1px solid var(--acc)}
+:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.band{padding:28px 16px}
+.band p{margin:0}
+#st1{font-size:26px;font-weight:700;line-height:1.2}
+#st2{margin-top:6px!important;color:var(--ink)}
+.band.high{background:var(--hi)}.band.low{background:var(--lo)}.band.mid{background:var(--mid)}
+svg{width:100%;height:auto;display:block}
+.ax{stroke:var(--line)}.tx{fill:var(--mute);font-size:10px}
+.fw{fill:var(--hi)}.ln{fill:none;stroke:var(--acc);stroke-width:2}.dt{fill:var(--acc)}
+.cv{stroke:var(--mute);stroke-dasharray:4 3}.pd{fill:var(--per)}
+.small{font-size:13px;color:var(--mute);margin:8px 0 0}
+ul{list-style:none;margin:0;padding:0}
+li{display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
+li b{min-width:48px}li span{color:var(--mute)}
+li .r{color:var(--per)}
+summary{cursor:pointer;font-weight:600}
+details>*{margin-top:12px}
+footer{padding:16px;font-size:13px;color:var(--mute)}
+@media (prefers-reduced-motion:no-preference){.band{transition:background .3s}}
+</style>
+</head>
+<body>
+<main id="lock">
+  <h1>Suivi de cycle</h1>
+  <p>Choisissez une phrase secrète d’au moins 8 caractères. Elle chiffre vos données et ne quitte jamais ce téléphone. Utilisez exactement la même sur les deux téléphones et notez-la quelque part : sans elle, les données sont perdues.</p>
+  <label>Phrase secrète<input id="pass" type="password" autocomplete="off"></label>
+  <button id="go">Déverrouiller</button>
+  <p id="lockmsg" role="alert" class="small"></p>
+</main>
+
+<main id="app" hidden>
+  <section id="status" class="band mid"><p id="st1"></p><p id="st2"></p></section>
+
+  <section>
+    <h2>Saisie du jour</h2>
+    <label>Date<input id="date" type="date"></label>
+    <label>Température au réveil (°C)<input id="temp" inputmode="decimal" placeholder="36,45"></label>
+    <label>Glaire
+      <select id="mucus">
+        <option value="">Non notée</option>
+        <option value="seche">Sèche ou absente</option>
+        <option value="crémeuse">Crémeuse</option>
+        <option value="filant">Filante (blanc d’œuf)</option>
+      </select>
+    </label>
+    <label class="chk"><input id="period" type="checkbox">Règles</label>
+    <button id="save">Enregistrer</button>
+    <p id="savemsg" class="small" role="status"></p>
+  </section>
+
+  <section>
+    <h2>Courbe du cycle</h2>
+    <div id="chart"></div>
+    <p class="small">La zone jaune montre la période fertile estimée. La ligne pointillée apparaît quand le décalage thermique est détecté.</p>
+  </section>
+
+  <section>
+    <h2>Derniers jours</h2>
+    <ul id="hist"></ul>
+  </section>
+
+  <section>
+    <details>
+      <summary>Partage entre vos deux téléphones</summary>
+      <label>Adresse du projet Supabase<input id="url" type="url" placeholder="https://xxxx.supabase.co"></label>
+      <label>Clé publique (anon)<input id="key" autocomplete="off"></label>
+      <label>E-mail du compte commun<input id="email" type="email"></label>
+      <label>Mot de passe du compte<input id="pw" type="password"></label>
+      <button id="signup" class="alt">Créer le compte</button>
+      <button id="signin">Se connecter</button>
+      <button id="syncnow" class="alt">Synchroniser maintenant</button>
+      <p id="syncmsg" class="small" role="status"></p>
+    </details>
+  </section>
+
+  <section>
+    <details>
+      <summary>Sauvegarde</summary>
+      <button id="exp" class="alt">Exporter (fichier chiffré)</button>
+      <label>Importer un fichier<input id="imp" type="file"></label>
+      <button id="lockbtn" class="alt">Verrouiller</button>
+    </details>
+  </section>
+
+  <footer>Estimation indicative : cette application ne remplace pas une méthode contraceptive. Version 1.0.0</footer>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+const $=s=>document.querySelector(s);
+const enc=new TextEncoder(),dec=new TextDecoder();
+let key=null,data={},sb=null,cfg={};
+try{cfg=JSON.parse(localStorage.getItem("cfg")||"{}")}catch{}
+
+/* Chiffrement : AES-GCM, clé dérivée de la phrase secrète */
+const b64=b=>btoa(String.fromCharCode(...new Uint8Array(b)));
+const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+async function derive(p){
+  const m=await crypto.subtle.importKey("raw",enc.encode(p),"PBKDF2",false,["deriveKey"]);
+  return crypto.subtle.deriveKey({name:"PBKDF2",salt:enc.encode("suivi-cycle-v1"),iterations:250000,hash:"SHA-256"},m,{name:"AES-GCM",length:256},false,["encrypt","decrypt"]);
+}
+async function seal(o){
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const c=await crypto.subtle.encrypt({name:"AES-GCM",iv},key,enc.encode(JSON.stringify(o)));
+  return b64(iv)+"."+b64(c);
+}
+async function unseal(s){
+  const [i,c]=s.split(".");
+  return JSON.parse(dec.decode(await crypto.subtle.decrypt({name:"AES-GCM",iv:unb64(i)},key,unb64(c))));
+}
+const persist=async()=>localStorage.setItem("blob",await seal(data));
+
+/* Dates */
+const pad=n=>String(n).padStart(2,"0");
+const fmt=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const day=s=>new Date(s+"T12:00:00");
+const today=()=>fmt(new Date());
+const addDays=(s,n)=>{const d=day(s);d.setDate(d.getDate()+n);return fmt(d)};
+const diff=(a,b)=>Math.round((day(a)-day(b))/864e5);
+const fr=d=>d.slice(8)+"/"+d.slice(5,7);
+const num=t=>t.toFixed(2).replace(".",",");
+
+/* Décalage thermique : 3 températures au-dessus des 6 précédentes, la 3ᵉ d’au moins 0,2 °C */
+function shift(T){
+  for(let i=6;i+2<T.length;i++){
+    const base=Math.max(...T.slice(i-6,i).map(x=>x.t));
+    if(T[i].t>base&&T[i+1].t>base&&T[i+2].t>=base+0.2)return{i,base};
+  }
+  return null;
+}
+
+function render(){
+  const t=today();
+  const starts=Object.keys(data).filter(d=>data[d].p&&!(data[addDays(d,-1)]&&data[addDays(d,-1)].p)).sort();
+  let L=28;
+  if(starts.length>1){
+    const g=[];for(let i=1;i<starts.length;i++)g.push(diff(starts[i],starts[i-1]));
+    const r=g.slice(-6);L=Math.min(40,Math.max(21,Math.round(r.reduce((a,b)=>a+b)/r.length)));
+  }
+  const past=starts.filter(d=>d<=t),cs=past[past.length-1];
+  const band=$("#status");
+  if(!cs){
+    band.className="band mid";
+    $("#st1").textContent="Le suivi démarre avec vos règles";
+    $("#st2").textContent="Enregistrez le premier jour des règles pour lancer le cycle.";
+    $("#chart").innerHTML="";
+  }else{
+    const n=diff(t,cs)+1,ovu=L-14;
+    const T=Object.keys(data).filter(d=>d>=cs&&data[d].t!=null).sort().map(d=>({d,t:data[d].t,n:diff(d,cs)+1}));
+    const sh=shift(T);
+    let cls,a,b,fa,fb;
+    if(sh){
+      const fh=T[sh.i],conf=T[sh.i+2];
+      fa=fh.n-6;fb=fh.n;
+      if(t>=conf.d){cls="low";a="Phase non fertile";b="Décalage thermique confirmé depuis le "+fr(conf.d)+".";}
+      else{cls="high";a="Encore fertile";b="Décalage thermique en cours : attendez le 3ᵉ jour haut.";}
+    }else{
+      fa=ovu-5;fb=ovu+1;
+      if(data[t]&&data[t].m==="filant"||(n>=fa&&n<=fb)){cls="high";a="Période fertile estimée";b="Une glaire filante renforce ce signal.";}
+      else if(n<fa){cls="mid";a="Avant la période fertile";b="Début estimé au jour "+fa+" du cycle.";}
+      else{cls="mid";a="Fin de la fenêtre estimée";b="Attendez le décalage thermique pour confirmer l’ovulation.";}
+    }
+    band.className="band "+cls;
+    $("#st1").textContent=a;
+    $("#st2").textContent="Jour "+n+" du cycle. "+b;
+    drawChart(T,sh,Math.max(L,n,...T.map(x=>x.n))+1,fa,fb,cs);
+  }
+  const keys=Object.keys(data).sort().reverse().slice(0,14);
+  $("#hist").innerHTML=keys.length?keys.map(d=>{
+    const e=data[d];
+    return "<li><b>"+fr(d)+"</b><span>"+(e.t!=null?num(e.t)+" °C":"pas de température")+"</span>"+(e.m?"<span>glaire "+e.m+"</span>":"")+(e.p?"<span class=r>règles</span>":"")+"</li>";
+  }).join(""):"<li><span>Aucune saisie pour l’instant.</span></li>";
+}
+
+function drawChart(T,sh,N,fa,fb,cs){
+  if(!T.length){$("#chart").innerHTML="<p class='small'>Aucune température enregistrée ce cycle.</p>";return;}
+  const W=340,H=190,L=34,R=8,B=24,Tp=10;
+  const vals=T.map(x=>x.t),lo=Math.min(...vals)-0.1,hi=Math.max(...vals)+0.1;
+  const x=k=>L+(k-1)*(W-L-R)/(N-1),y=v=>H-B-(v-lo)*(H-B-Tp)/(hi-lo);
+  let s="<svg viewBox='0 0 "+W+" "+H+"' role='img' aria-label='Courbe de température du cycle'>";
+  const x0=x(Math.max(1,fa)-0.5),x1=x(Math.min(N,fb)+0.5);
+  s+="<rect class='fw' x='"+x0+"' y='"+Tp+"' width='"+(x1-x0)+"' height='"+(H-B-Tp)+"'/>";
+  s+="<line class='ax' x1='"+L+"' y1='"+(H-B)+"' x2='"+(W-R)+"' y2='"+(H-B)+"'/>";
+  for(let k=1;k<=N;k+=7)s+="<text class='tx' x='"+x(k)+"' y='"+(H-8)+"' text-anchor='middle'>J"+k+"</text>";
+  s+="<text class='tx' x='"+(L-4)+"' y='"+(y(hi)+4)+"' text-anchor='end'>"+num(hi).slice(0,5)+"</text>";
+  s+="<text class='tx' x='"+(L-4)+"' y='"+(y(lo)+4)+"' text-anchor='end'>"+num(lo).slice(0,5)+"</text>";
+  if(sh)s+="<line class='cv' x1='"+L+"' x2='"+(W-R)+"' y1='"+y(sh.base)+"' y2='"+y(sh.base)+"'/>";
+  s+="<polyline class='ln' points='"+T.map(p=>x(p.n)+","+y(p.t)).join(" ")+"'/>";
+  s+=T.map(p=>"<circle class='dt' cx='"+x(p.n)+"' cy='"+y(p.t)+"' r='3'/>").join("");
+  for(let k=1;k<=N;k++){const d=addDays(cs,k-1);if(data[d]&&data[d].p)s+="<circle class='pd' cx='"+x(k)+"' cy='"+(H-B-5)+"' r='3'/>";}
+  $("#chart").innerHTML=s+"</svg>";
+}
+
+/* Saisie */
+function fill(){
+  const e=data[$("#date").value]||{};
+  $("#temp").value=e.t!=null?num(e.t):"";
+  $("#mucus").value=e.m||"";
+  $("#period").checked=!!e.p;
+}
+$("#date").onchange=fill;
+$("#save").onclick=async()=>{
+  const d=$("#date").value;if(!d)return;
+  const t=parseFloat($("#temp").value.replace(",","."));
+  if(!isNaN(t)&&(t<34||t>42)){$("#savemsg").textContent="Température hors limites (34 à 42 °C).";return;}
+  data[d]={t:isNaN(t)?null:t,m:$("#mucus").value,p:$("#period").checked,u:Date.now()};
+  await persist();render();$("#savemsg").textContent="Enregistré";sync();
+};
+
+/* Déverrouillage */
+$("#go").onclick=async()=>{
+  const p=$("#pass").value;
+  if(p.length<8){$("#lockmsg").textContent="Utilisez au moins 8 caractères.";return;}
+  key=await derive(p);
+  const blob=localStorage.getItem("blob");
+  if(blob){try{data=await unseal(blob)}catch{key=null;$("#lockmsg").textContent="Phrase secrète incorrecte.";return;}}
+  $("#lock").hidden=true;$("#app").hidden=false;
+  $("#date").value=today();fill();render();
+  ["url","key","email"].forEach(k=>$("#"+k).value=cfg[k]||"");
+  sync();
+};
+$("#pass").onkeydown=e=>{if(e.key==="Enter")$("#go").click()};
+$("#lockbtn").onclick=()=>location.reload();
+
+/* Partage via Supabase (les données y arrivent déjà chiffrées) */
+const say=m=>$("#syncmsg").textContent=m;
+function client(){
+  if(sb)return sb;
+  if(!cfg.url||!cfg.key||!window.supabase)return null;
+  sb=supabase.createClient(cfg.url,cfg.key);return sb;
+}
+function saveCfg(){
+  cfg={url:$("#url").value.trim(),key:$("#key").value.trim(),email:$("#email").value.trim()};
+  localStorage.setItem("cfg",JSON.stringify(cfg));sb=null;
+}
+async function auth(kind){
+  saveCfg();const c=client();
+  if(!c){say("Renseignez l’adresse et la clé du projet Supabase.");return;}
+  const {error}=await c.auth[kind==="up"?"signUp":"signInWithPassword"]({email:cfg.email,password:$("#pw").value});
+  if(error){say("Erreur : "+error.message);return;}
+  say(kind==="up"?"Compte créé. Connectez-vous maintenant.":"Connecté.");
+  if(kind!=="up")sync();
+}
+$("#signup").onclick=()=>auth("up");
+$("#signin").onclick=()=>auth("in");
+$("#syncnow").onclick=()=>{saveCfg();sync();};
+async function sync(){
+  const c=client();if(!c)return;
+  const {data:s}=await c.auth.getSession();
+  if(!s.session){say("Non connecté.");return;}
+  try{
+    const {data:rows,error}=await c.from("entries").select("day,payload");
+    if(error)throw error;
+    for(const r of rows){
+      let e;try{e=await unseal(r.payload)}catch{say("La phrase secrète diffère de celle utilisée pour les données en ligne.");return;}
+      if(!data[r.day]||e.u>data[r.day].u)data[r.day]=e;
+    }
+    const up=[];
+    for(const d in data)up.push({user_id:s.session.user.id,day:d,payload:await seal(data[d])});
+    if(up.length){const {error:e2}=await c.from("entries").upsert(up);if(e2)throw e2;}
+    await persist();render();
+    const n=new Date();say("Synchronisé à "+pad(n.getHours())+":"+pad(n.getMinutes())+".");
+  }catch(e){say("Erreur : "+e.message);}
+}
+
+/* Sauvegarde chiffrée */
+$("#exp").onclick=()=>{
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([localStorage.getItem("blob")||""],{type:"text/plain"}));
+  a.download="suivi-cycle-sauvegarde.txt";a.click();
+};
+$("#imp").onchange=async e=>{
+  const f=e.target.files[0];if(!f)return;
+  try{
+    const o=await unseal((await f.text()).trim());
+    for(const d in o)if(!data[d]||o[d].u>data[d].u)data[d]=o[d];
+    await persist();render();$("#savemsg").textContent="Sauvegarde importée";sync();
+  }catch{$("#savemsg").textContent="Fichier illisible ou phrase secrète différente.";}
+};
+
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js");
+</script>
+</body>
+</html>

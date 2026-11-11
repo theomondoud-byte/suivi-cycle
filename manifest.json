@@ -1,0 +1,11 @@
+{
+  "name": "Suivi de cycle",
+  "short_name": "Cycle",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#16323B",
+  "theme_color": "#16323B",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
