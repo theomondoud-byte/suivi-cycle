@@ -143,7 +143,7 @@ footer{padding:16px;font-size:13px;color:var(--mute)}
     </details>
   </section>
 
-  <footer>Estimation indicative : cette application ne remplace pas une méthode contraceptive. Version 1.6.0</footer>
+  <footer>Estimation indicative : cette application ne remplace pas une méthode contraceptive. Version 1.6.1</footer>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
@@ -186,13 +186,14 @@ const fr=d=>d.slice(8)+"/"+d.slice(5,7);
 const num=t=>t.toFixed(2).replace(".",",");
 const nowHM=()=>{const d=new Date();return pad(d.getHours())+":"+pad(d.getMinutes());};
 
-/* Cyclamen : températures arrondies au demi-dixième ; NMB = moyenne des 6 points les plus bas avant le décalage ;
+/* Cyclamen : températures arrondies au demi-dixième ; NMB = moyenne des 6 points les plus bas, pris après les règles, avant le décalage ;
    trait haut = NMB + 0,3 ; 3 points qui se suivent, hauts (≥ trait haut) et stables (≤ 0,1 °C entre le 1er et le 3ᵉ).
    Option « 2 dixièmes » : trait haut = NMB + 0,2 et il faut un 4ᵉ point haut et stable. */
-function shift(T){
+function shift(T,bl){
   const specs=cfg.d2?[[0.3,3],[0.2,4]]:[[0.3,3]];
   for(let i=6;i<T.length;i++){
-    const lw=T.slice(0,i).map((x,j)=>[x.t,j]).sort((a,b)=>a[0]-b[0]||a[1]-b[1]).slice(0,6);
+    const lw=T.slice(0,i).map((x,j)=>[x.t,j,x.n]).filter(a=>a[2]>bl).sort((a,b)=>a[0]-b[0]||a[1]-b[1]).slice(0,6);
+    if(lw.length<6)continue;
     const base=rnd(lw.reduce((a,x)=>a+x[0],0)/6);
     for(const [d,m] of specs){
       if(i+m>T.length)continue;
@@ -216,7 +217,8 @@ function cycles(){
   return st.map((s0,k)=>{
     const nx=st[k+1]||null;
     const T=Object.keys(data).filter(d=>d>=s0&&(!nx||d<nx)&&data[d].t!=null&&!data[d].x).sort().map(d=>({d,t:rnd(adj(data[d])),n:diff(d,s0)+1}));
-    const sh=shift(T);
+    let bl=0;while((data[addDays(s0,bl)]||{}).p)bl++;
+    const sh=shift(T,bl);
     let pl=0;while(isP(data[addDays(s0,pl)]))pl++;
     let gs=null;for(let k=0;k<(nx?diff(nx,s0):60)&&gs==null;k++){const e=data[addDays(s0,k)];if(e&&(e.m==="crémeuse"||e.m==="filant"))gs=k+1;}
     return{s:s0,pl,gs,e:nx,len:nx?diff(nx,s0):null,T,sh,fh:sh?T[sh.i].n:null,cf:sh?T[sh.c].n:null};
@@ -347,7 +349,7 @@ function drawChart(A,N){
 function fill(){
   const e=data[$("#date").value]||{};
   $("#temp").value=e.t!=null?num(e.t):"";
-  $("#hour").value=e.h||nowHM();
+  $("#hour").value=e.h||(($("#date").value===today()&&e.t==null)?nowHM():"");
   $("#mucus").value=e.m||"";
   $("#period").value=e.p===true?3:(e.p||0);$("#xcl").checked=!!e.x;$("#union").checked=!!e.un;$("#note").value=e.nt||"";$("#obs").value=e.mo||"";$("#js").checked=!!e.js;
 }
@@ -613,7 +615,7 @@ function explain(A){
   if(!A.sh){el.innerHTML=g+"<br>Pas encore de 3 points hauts et stables : la fertilité reste ouverte une fois la glaire apparue.";return;}
   const b=A.sh,T=A.T,lw=b.low.map(j=>T[j]).sort((x,y)=>x.n-y.n),hi=T.slice(b.i,b.c+1);
   el.innerHTML=[g,
-    "<b>Niveau moyen bas (NMB)</b> : moyenne des 6 points les plus bas avant le décalage (jours "+lw.map(x=>x.n).join(", ")+"), arrondie à "+num(b.base)+" °C.",
+    "<b>Niveau moyen bas (NMB)</b> : moyenne des 6 points les plus bas, pris après les règles, avant le décalage (jours "+lw.map(x=>x.n).join(", ")+"), arrondie à "+num(b.base)+" °C.",
     "<b>Trait haut</b> : NMB + "+(b.d===0.3?"0,3":"0,2")+" = "+num(b.base+b.d)+" °C.",
     "<b>Points hauts et stables</b> : "+hi.map(x=>"J"+x.n+" ("+num(x.t)+")").join(", ")+". Hauts : au niveau du trait haut ou au-dessus. Stables : au plus 0,1 °C entre le 1er et le 3ᵉ point.",
     "<b>Fermeture</b> : le matin du jour "+A.cf+" ("+fr(addDays(A.s,A.cf-1))+") commence le 1er jour non fertile post-ovulatoire.",
@@ -636,7 +638,7 @@ $("#hist").onclick=e=>{
   window.scrollTo({top:0,behavior:"smooth"});
 };
 document.addEventListener("visibilitychange",()=>{
-  if(!document.hidden&&!$("#app").hidden&&!(data[$("#date").value]||{}).h)$("#hour").value=nowHM();
+  if(!document.hidden&&!$("#app").hidden&&$("#date").value===today()&&(data[$("#date").value]||{}).t==null)$("#hour").value=nowHM();
 });
 autoUnlock();
 if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js");
