@@ -71,9 +71,9 @@ footer{padding:16px;font-size:13px;color:var(--mute)}
     <label>Glaire
       <select id="mucus">
         <option value="">Non notée</option>
-        <option value="seche">Sèche ou absente</option>
-        <option value="crémeuse">Crémeuse</option>
-        <option value="filant">Filante (blanc d’œuf)</option>
+        <option value="seche">Sèche (S)</option>
+        <option value="crémeuse">Humide (H), crémeuse</option>
+        <option value="filant">Mouillée (M), filante</option>
       </select>
     </label>
     <label>Règles<select id="period"><option value="0">Aucune</option><option value="1">Traces (spotting)</option><option value="2">Faibles</option><option value="3">Moyennes</option><option value="4">Abondantes</option></select></label>
@@ -92,7 +92,7 @@ footer{padding:16px;font-size:13px;color:var(--mute)}
     <p id="estnote" class="small"></p>
     <label class="chk"><input id="interp" type="checkbox">Afficher l’interprétation du décalage thermique</label>
     <p id="itxt" class="small"></p>
-    <p class="small">Zone jaune : période fertile. Zone verte : phase non fertile, une fois le décalage thermique confirmé. Trait vertical : ovulation, prévue d’après vos cycles précédents tant que la température ne l’a pas confirmée. Ligne pointillée horizontale : ligne de base du décalage.</p>
+    <p class="small">Zone jaune : période fertile (ouverte par la glaire, fermée le soir du 3ᵉ jour haut). Zone jaune en pointillés : estimation d’après vos cycles précédents. Zone verte : phase non fertile. Trait vertical : ovulation. Bande « Règles » : une goutte par niveau, de 1 (traces) à 4 (abondantes). Bande « Glaire » : S sèche, H humide, M mouillée, du plus clair au plus soutenu.</p>
   </section>
 
   <section>
@@ -104,7 +104,8 @@ footer{padding:16px;font-size:13px;color:var(--mute)}
   <section><h2>Statistiques</h2><ul id="stats"></ul></section>
   <section><details><summary>Réglages de la courbe</summary>
     <label>Correction horaire (°C par heure d’écart)<input id="coef" type="number" step="0.01" min="0" max="0.5"></label>
-    <label>Écart exigé du 3ᵉ jour haut (°C au-dessus de la ligne de base)<input id="thr" type="number" step="0.05" min="0.1" max="0.5"></label>
+    <label>Écart minimal de chaque jour haut (°C au-dessus du niveau moyen bas)<input id="thr1" type="number" step="0.05" min="0.1" max="0.5"></label>
+    <label>Écart minimal du 3ᵉ jour haut (°C au-dessus du niveau moyen bas)<input id="thr" type="number" step="0.05" min="0.1" max="0.5"></label>
   </details></section>
   <section>
     <details>
@@ -138,7 +139,7 @@ footer{padding:16px;font-size:13px;color:var(--mute)}
     </details>
   </section>
 
-  <footer>Estimation indicative : cette application ne remplace pas une méthode contraceptive. Version 1.4.0</footer>
+  <footer>Estimation indicative : cette application ne remplace pas une méthode contraceptive. Version 1.5.0</footer>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
@@ -181,21 +182,18 @@ const fr=d=>d.slice(8)+"/"+d.slice(5,7);
 const num=t=>t.toFixed(2).replace(".",",");
 const nowHM=()=>{const d=new Date();return pad(d.getHours())+":"+pad(d.getMinutes());};
 
-/* Décalage thermique (règle des 3 sur 6) : 3 températures au-dessus des 6 précédentes, la 3ᵉ d’au moins 0,2 °C ;
-   à défaut, une 4ᵉ température au-dessus de la ligne de base confirme. */
+/* Méthode Cyclamen : niveau moyen bas = moyenne des 6 températures précédant la montée.
+   3 jours hauts consécutifs : chacun au moins thr1 au-dessus, le 3ᵉ au moins thr au-dessus. */
 function shift(T){
   for(let i=6;i+2<T.length;i++){
-    const base=Math.max(...T.slice(i-6,i).map(x=>x.t));
-    if(T[i].t>base&&T[i+1].t>base&&T[i+2].t>base){
-      if(T[i+2].t>=base+thr()-1e-9)return{i,base,c:i+2};
-      if(i+3<T.length&&T[i+3].t>base)return{i,base,c:i+3};
-    }
+    const base=T.slice(i-6,i).reduce((a,x)=>a+x.t,0)/6,h=[T[i],T[i+1],T[i+2]];
+    if(h.every(x=>x.t>=base+thr1()-1e-9)&&h[2].t>=base+thr()-1e-9)return{i,base,c:i+2};
   }
   return null;
 }
 
 /* Correction horaire : environ 0,1 °C par heure d’écart avec votre heure habituelle (la médiane de vos mesures) */
-let href=null;const coef=()=>cfg.coef??0.19,thr=()=>cfg.thr??0.2;
+let href=null;const coef=()=>cfg.coef??0.19,thr=()=>cfg.thr??0.3,thr1=()=>cfg.thr1??0.2;
 const isP=e=>!!e&&(e.p===true||e.p>=2);
 const mins=h=>+h.slice(0,2)*60+ +h.slice(3,5);
 function refHour(){const m=Object.values(data).filter(e=>e.h).map(e=>mins(e.h)).sort((a,b)=>a-b);href=m.length?m[Math.floor(m.length/2)]:null;}
@@ -209,7 +207,8 @@ function cycles(){
     const T=Object.keys(data).filter(d=>d>=s0&&(!nx||d<nx)&&data[d].t!=null&&!data[d].x).sort().map(d=>({d,t:adj(data[d]),n:diff(d,s0)+1}));
     const sh=shift(T);
     let pl=0;while(isP(data[addDays(s0,pl)]))pl++;
-    return{s:s0,pl,e:nx,len:nx?diff(nx,s0):null,T,sh,fh:sh?T[sh.i].n:null,cf:sh?T[sh.c].n:null};
+    let gs=null;for(let k=0;k<(nx?diff(nx,s0):60)&&gs==null;k++){const e=data[addDays(s0,k)];if(e&&(e.m==="crémeuse"||e.m==="filant"))gs=k+1;}
+    return{s:s0,pl,gs,e:nx,len:nx?diff(nx,s0):null,T,sh,fh:sh?T[sh.i].n:null,cf:sh?T[sh.c].n:null};
   });
 }
 /* Ovulation : la veille du 1er jour haut. Tant que le décalage n’est pas confirmé, elle est prévue d’après vos cycles précédents. */
@@ -220,7 +219,7 @@ function analyse(C,k){
   let ovu;
   if(c.sh)ovu=c.fh-1;
   else{const f=prev.map(x=>x.fh-1).sort((a,b)=>a-b);ovu=f.length?f[Math.floor(f.length/2)]:L-14;}
-  return{...c,L,ovu,nh:prev.length,fa:ovu-5,fb:c.sh?c.cf:ovu+1};
+  return{...c,L,ovu,nh:prev.length,ea:ovu-5,eb:ovu+1,fa:c.gs,fb:c.sh?c.cf:null};
 }
 
 let back=0;
@@ -238,13 +237,11 @@ function render(){
   }else{
     const cur=analyse(C,C.length-1),n=diff(t,cur.s)+1,dd=k=>fr(addDays(cur.s,k-1));
     let cls,a,b;
-    if(cur.sh){
-      if(n>cur.cf){cls="low";a="Phase non fertile";b="Ovulation probable le "+dd(cur.ovu)+" (jour "+cur.ovu+"). Décalage confirmé le "+dd(cur.cf)+".";}
-      else{cls="high";a="Encore fertile";b="Ovulation probable le "+dd(cur.ovu)+". Phase non fertile à partir du soir du jour "+cur.cf+".";}
-    }else if((data[t]&&data[t].m==="filant")||(n>=cur.fa&&n<=cur.fb)){
-      cls="high";a="Période fertile estimée";b="Ovulation estimée vers le jour "+cur.ovu+" ("+dd(cur.ovu)+"), d’après "+(cur.nh?cur.nh+" cycle(s) précédent(s)":"un cycle standard")+". Ce n’est qu’une estimation : la température la confirmera après coup.";
-    }else if(n<cur.fa){cls="mid";a="Avant la période fertile";b="Début estimé au jour "+cur.fa+" ("+dd(cur.fa)+").";}
-    else{cls="mid";a="Ovulation probablement passée";b="Attendez 3 températures hautes pour la confirmer.";}
+    const est="Estimation indicative : ovulation vers le jour "+cur.ovu+" ("+dd(cur.ovu)+"), d’après "+(cur.nh?cur.nh+" cycle(s) précédent(s)":"un cycle standard")+".";
+    if(cur.sh&&n>cur.cf){cls="low";a="Phase non fertile";b="Fertilité fermée depuis le soir du jour "+cur.cf+" ("+dd(cur.cf)+"). Ovulation probable le "+dd(cur.ovu)+".";}
+    else if(cur.sh){cls="high";a="Encore fertile";b="La fertilité se ferme le soir du jour "+cur.cf+" ("+dd(cur.cf)+"). Ovulation probable le "+dd(cur.ovu)+".";}
+    else if(cur.gs&&n>=cur.gs){cls="high";a="Période fertile";b="Ouverte par la glaire depuis le jour "+cur.gs+" ; seule la température la fermera (3 jours hauts). "+est;}
+    else{cls="mid";a="Pas de glaire observée";b="Phase non fertile le soir tant qu’aucune glaire n’apparaît. "+est;}
     band.className="band "+cls;
     $("#st1").textContent=a;
     $("#st2").textContent="Jour "+n+" du cycle. "+b;
@@ -265,20 +262,21 @@ function render(){
 function drawChart(A,N){
   const T=A.T;
   if(!T.length){$("#chart").innerHTML="<p class='small'>Aucune température enregistrée ce cycle.</p>";return;}
-  const W=340,H=190,L=34,R=8,B=24,Tp=10;
+  const W=340,H=235,L=34,R=8,B=64,Tp=10;
   const vals=T.map(x=>x.t),lo=Math.min(...vals)-0.1,hi=Math.max(...vals,A.sh?A.sh.base+thr():0)+0.1;
   const x=k=>L+(k-1)*(W-L-R)/(N-1),y=v=>H-B-(v-lo)*(H-B-Tp)/(hi-lo);
   const zone=(a,b,c)=>{const x0=x(Math.max(1,a)-0.5),x1=x(Math.min(N,b)+0.5);return x1>x0?"<rect class='"+c+"' x='"+x0+"' y='"+Tp+"' width='"+(x1-x0)+"' height='"+(H-B-Tp)+"'/>":"";};
   let s="<svg viewBox='0 0 "+W+" "+H+"' role='img' aria-label='Courbe de température du cycle'>";
   if(A.sh)s+=zone(A.cf+1,N,"inf");
+  if(!A.sh&&!A.e)s+=zone(A.ea,A.eb,"fw est");
+  if(A.gs)s+=zone(A.gs,A.sh?A.cf:N,"fw");
   if(A.sh||!A.e){
-    s+=zone(A.fa,A.fb,A.sh?"fw":"fw est");
     const ox=x(A.ovu);
     s+="<line class='ov' x1='"+ox+"' x2='"+ox+"' y1='"+Tp+"' y2='"+(H-B)+"'/>";
     s+="<text class='tx' x='"+ox+"' y='"+(Tp+9)+"' text-anchor='"+(ox>W-70?"end":"start")+"'> Ovulation"+(A.sh?"":" estimée")+" </text>";
   }
   s+="<line class='ax' x1='"+L+"' y1='"+(H-B)+"' x2='"+(W-R)+"' y2='"+(H-B)+"'/>";
-  for(let k=1;k<=N;k+=7)s+="<text class='tx' x='"+x(k)+"' y='"+(H-8)+"' text-anchor='middle'>J"+k+"</text>";
+  for(let k=1;k<=N;k+=7)s+="<text class='tx' x='"+x(k)+"' y='"+(H-B+11)+"' text-anchor='middle'>J"+k+"</text>";
   s+="<text class='tx' x='"+(L-4)+"' y='"+(y(hi)+4)+"' text-anchor='end'>"+num(hi).slice(0,5)+"</text>";
   s+="<text class='tx' x='"+(L-4)+"' y='"+(y(lo)+4)+"' text-anchor='end'>"+num(lo).slice(0,5)+"</text>";
   if(A.sh)s+="<line class='cv' x1='"+L+"' x2='"+(W-R)+"' y1='"+y(A.sh.base)+"' y2='"+y(A.sh.base)+"'/>";
@@ -289,9 +287,14 @@ function drawChart(A,N){
   }
   s+="<polyline class='ln' points='"+T.map(p=>x(p.n)+","+y(p.t)).join(" ")+"'/>";
   s+=T.map(p=>"<circle class='dt' cx='"+x(p.n)+"' cy='"+y(p.t)+"' r='3'/>").join("");
+  const sp=(W-L-R)/(N-1),gw=Math.min(10,sp-1);
+  s+="<text class='tx' x='0' y='"+(H-B+36)+"'>Règles</text><text class='tx' x='0' y='"+(H-B+58)+"'>Glaire</text>";
   for(let k=1;k<=N;k++){
     const e=data[addDays(A.s,k-1)];if(!e)continue;
-    if(e.p)s+="<circle class='pd' cx='"+x(k)+"' cy='"+(H-B-5)+"' r='"+(2+(e.p===true?3:e.p)*0.5)+"'/>";
+    const p=e.p===true?3:(+e.p||0);
+    for(let j=0;j<p;j++)s+="<circle class='pd' cx='"+x(k)+"' cy='"+(H-B+40-j*6)+"' r='2.6'/>";
+    const g={seche:["S","#d9d9d9","#222"],"crémeuse":["H","#9ad1e6","#0b2a3a"],filant:["M","#2a7fc0","#fff"]}[e.m];
+    if(g)s+="<rect x='"+(x(k)-gw/2)+"' y='"+(H-B+46)+"' width='"+gw+"' height='16' fill='"+g[1]+"'/><text x='"+x(k)+"' y='"+(H-B+58)+"' text-anchor='middle' font-size='9' font-weight='700' fill='"+g[2]+"'>"+g[0]+"</text>";
     if(e.un)s+="<text class='un' x='"+x(k)+"' y='"+(H-B-14)+"' text-anchor='middle'>♥</text>";
   }
   $("#chart").innerHTML=s+"</svg>";
@@ -337,7 +340,7 @@ function start(){
   $("#lock").hidden=true;$("#app").hidden=false;
   $("#corr").checked=cfg.corr!==false;$("#date").value=today();fill();render();
   ["url","key","email"].forEach(k=>$("#"+k).value=cfg[k]||"");
-  $("#coef").value=coef();$("#thr").value=thr();loadExtra();
+  $("#coef").value=coef();$("#thr").value=thr();$("#thr1").value=thr1();loadExtra();
   sync();
 }
 async function autoUnlock(){
@@ -557,20 +560,21 @@ function setCfg(k,id){
 }
 $("#coef").onchange=()=>setCfg("coef","#coef");
 $("#thr").onchange=()=>setCfg("thr","#thr");
+$("#thr1").onchange=()=>setCfg("thr1","#thr1");
 $("#interp").onchange=render;
 
 function explain(A){
   const el=$("#itxt"),pc=v=>String(v).replace(".",",");
-  $("#estnote").textContent=A.sh||A.e?"":"Estimation d’après "+(A.nh?A.nh+" cycle(s) précédent(s) avec décalage thermique":"un cycle standard de 28 jours")+" : fiabilité limitée. Elle sera remplacée par le résultat réel dès que la température aura confirmé l’ovulation.";
+  $("#estnote").textContent=A.sh||A.e?"":"Estimation d’après "+(A.nh?A.nh+" cycle(s) précédent(s) avec décalage thermique":"un cycle standard de 28 jours")+" : fiabilité limitée. Elle n’entre pas dans la méthode Cyclamen et sera remplacée par le résultat réel dès que la température aura confirmé l’ovulation.";
   if(!$("#interp").checked){el.innerHTML="";return;}
-  if(!A.sh){el.textContent="Pas de décalage thermique confirmé sur ce cycle : rien à interpréter.";return;}
-  const b=A.sh,T=A.T,six=T.slice(b.i-6,b.i),hi=T.slice(b.i,b.c+1),th=b.base+thr();
-  el.innerHTML=[
-    "<b>Ligne de base</b> : les 6 températures précédant la montée (jours "+six.map(x=>x.n).join(", ")+") ; la plus haute vaut "+num(b.base)+" °C.",
-    "<b>Jours hauts</b> : "+hi.map(x=>"J"+x.n+" ("+num(x.t)+")").join(", ")+", tous au-dessus de la ligne de base.",
-    "<b>Seuil</b> : le 3ᵉ jour haut doit atteindre "+num(th)+" °C (ligne de base + "+pc(thr())+"). "+(b.c===b.i+2?"Atteint au jour "+A.cf+".":"Non atteint : une 4ᵉ température haute, au jour "+A.cf+", confirme le décalage."),
-    "<b>Ovulation probable</b> : la veille du 1er jour haut, soit le jour "+A.ovu+".",
-    "<b>Période fertile</b> : du jour "+A.fa+" (5 jours avant l’ovulation) jusqu’au soir du jour "+A.cf+" ; phase non fertile ensuite."
+  const g=A.gs?"<b>Ouverture</b> : la glaire apparaît au jour "+A.gs+" (humide ou mouillée), ce qui ouvre la période fertile.":"<b>Ouverture</b> : aucune glaire notée ce cycle, donc aucune ouverture observée.";
+  if(!A.sh){el.innerHTML=g+"<br>Pas de décalage thermique confirmé : la fertilité reste ouverte.";return;}
+  const b=A.sh,T=A.T,six=T.slice(b.i-6,b.i),hi=T.slice(b.i,b.c+1);
+  el.innerHTML=[g,
+    "<b>Niveau moyen bas</b> : moyenne des 6 températures précédant la montée (jours "+six.map(x=>x.n).join(", ")+") = "+num(b.base)+" °C.",
+    "<b>Jours hauts</b> : "+hi.map(x=>"J"+x.n+" ("+num(x.t)+")").join(", ")+". Chacun doit être à au moins "+pc(thr1())+" °C au-dessus du niveau moyen bas (soit "+num(b.base+thr1())+" °C), et le 3ᵉ à au moins "+pc(thr())+" °C (soit "+num(b.base+thr())+" °C).",
+    "<b>Fermeture</b> : la fertilité se ferme le soir du 3ᵉ jour haut, jour "+A.cf+". Seule la température ferme la période fertile.",
+    "<b>Ovulation probable</b> : la veille du 1er jour haut, jour "+A.ovu+"."
   ].join("<br>");
 }
 function stats(C){
