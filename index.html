@@ -37,6 +37,7 @@ svg{width:100%;height:auto;display:block}
 .nav{display:flex;align-items:center;gap:8px;margin-bottom:12px}.nav span{flex:1;text-align:center;font-size:14px}.nav button{width:48px;margin:0}
 button:disabled{opacity:.4}
 li button.row{display:flex;gap:12px;width:100%;margin:0;padding:8px 0;border:0;border-radius:0;background:transparent;color:var(--ink);font-weight:400;text-align:left}
+.est{opacity:.55;stroke:var(--ink);stroke-dasharray:4 3}.th{stroke:var(--per);stroke-dasharray:6 3}.ring{fill:none;stroke:var(--acc);stroke-width:1.5}.un{fill:var(--per);font-size:11px}
 .small{font-size:13px;color:var(--mute);margin:8px 0 0}
 ul{list-style:none;margin:0;padding:0}
 li{display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
@@ -75,7 +76,10 @@ footer{padding:16px;font-size:13px;color:var(--mute)}
         <option value="filant">Filante (blanc d’œuf)</option>
       </select>
     </label>
-    <label class="chk"><input id="period" type="checkbox">Règles</label>
+    <label>Règles<select id="period"><option value="0">Aucune</option><option value="1">Traces (spotting)</option><option value="2">Faibles</option><option value="3">Moyennes</option><option value="4">Abondantes</option></select></label>
+    <label class="chk"><input id="union" type="checkbox">Union</label>
+    <label class="chk"><input id="xcl" type="checkbox">Température perturbée (à ignorer)</label>
+    <label>Note ou événement<input id="note" maxlength="200" placeholder="nuit hachée, voyage…"></label>
     <button id="save">Enregistrer</button>
     <p id="savemsg" class="small" role="status"></p>
   </section>
@@ -85,6 +89,9 @@ footer{padding:16px;font-size:13px;color:var(--mute)}
     <div class="nav"><button id="cprev" class="alt" aria-label="Cycle précédent">‹</button><span id="cyclbl"></span><button id="cnext" class="alt" aria-label="Cycle suivant">›</button></div>
     <label class="chk"><input id="corr" type="checkbox" checked>Corriger selon l’heure de mesure</label>
     <div id="chart"></div>
+    <p id="estnote" class="small"></p>
+    <label class="chk"><input id="interp" type="checkbox">Afficher l’interprétation du décalage thermique</label>
+    <p id="itxt" class="small"></p>
     <p class="small">Zone jaune : période fertile. Zone verte : phase non fertile, une fois le décalage thermique confirmé. Trait vertical : ovulation, prévue d’après vos cycles précédents tant que la température ne l’a pas confirmée. Ligne pointillée horizontale : ligne de base du décalage.</p>
   </section>
 
@@ -94,6 +101,11 @@ footer{padding:16px;font-size:13px;color:var(--mute)}
     <ul id="hist"></ul>
   </section>
 
+  <section><h2>Statistiques</h2><ul id="stats"></ul></section>
+  <section><details><summary>Réglages de la courbe</summary>
+    <label>Correction horaire (°C par heure d’écart)<input id="coef" type="number" step="0.01" min="0" max="0.5"></label>
+    <label>Écart exigé du 3ᵉ jour haut (°C au-dessus de la ligne de base)<input id="thr" type="number" step="0.05" min="0.1" max="0.5"></label>
+  </details></section>
   <section>
     <details>
       <summary>Partage entre vos deux téléphones</summary>
@@ -118,11 +130,15 @@ footer{padding:16px;font-size:13px;color:var(--mute)}
       <button id="chg" class="alt">Changer la phrase secrète</button>
       <button id="rst" class="alt">Réinitialiser cet appareil</button>
       <p id="bkmsg" class="small" role="status"></p>
+      <label>Sauvegardes automatiques (une par jour, 7 jours)<select id="bks"></select></label>
+      <button id="bkr" class="alt">Restaurer cette sauvegarde</button>
+      <p class="small">Dernières modifications faites sur cet appareil (touchez pour annuler) :</p>
+      <ul id="hl"></ul>
       <button id="lockbtn" class="alt">Verrouiller</button>
     </details>
   </section>
 
-  <footer>Estimation indicative : cette application ne remplace pas une méthode contraceptive. Version 1.3.0</footer>
+  <footer>Estimation indicative : cette application ne remplace pas une méthode contraceptive. Version 1.4.0</footer>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
@@ -148,7 +164,11 @@ async function unseal(s){
   const [i,c]=s.split(".");
   return JSON.parse(dec.decode(await crypto.subtle.decrypt({name:"AES-GCM",iv:unb64(i)},key,unb64(c))));
 }
-const persist=async()=>localStorage.setItem("blob",await seal(data));
+const persist=async()=>{
+  const b=await seal(data);localStorage.setItem("blob",b);
+  const k="bk-"+today();
+  if(!localStorage.getItem(k)){localStorage.setItem(k,b);Object.keys(localStorage).filter(x=>x.startsWith("bk-")).sort().slice(0,-7).forEach(x=>localStorage.removeItem(x));}
+};
 
 /* Dates */
 const pad=n=>String(n).padStart(2,"0");
@@ -167,7 +187,7 @@ function shift(T){
   for(let i=6;i+2<T.length;i++){
     const base=Math.max(...T.slice(i-6,i).map(x=>x.t));
     if(T[i].t>base&&T[i+1].t>base&&T[i+2].t>base){
-      if(T[i+2].t>=base+0.2-1e-9)return{i,base,c:i+2};
+      if(T[i+2].t>=base+thr()-1e-9)return{i,base,c:i+2};
       if(i+3<T.length&&T[i+3].t>base)return{i,base,c:i+3};
     }
   }
@@ -175,19 +195,21 @@ function shift(T){
 }
 
 /* Correction horaire : environ 0,1 °C par heure d’écart avec votre heure habituelle (la médiane de vos mesures) */
-const COEF=0.1;let href=null;
+let href=null;const coef=()=>cfg.coef??0.19,thr=()=>cfg.thr??0.2;
+const isP=e=>!!e&&(e.p===true||e.p>=2);
 const mins=h=>+h.slice(0,2)*60+ +h.slice(3,5);
 function refHour(){const m=Object.values(data).filter(e=>e.h).map(e=>mins(e.h)).sort((a,b)=>a-b);href=m.length?m[Math.floor(m.length/2)]:null;}
-function adj(e){return $("#corr").checked&&e.h&&href!=null?e.t-COEF*(mins(e.h)-href)/60:e.t;}
+function adj(e){return $("#corr").checked&&e.h&&href!=null?e.t-coef()*(mins(e.h)-href)/60:e.t;}
 
 /* Cycles : du premier jour des règles au jour précédant les règles suivantes */
 function cycles(){
-  const st=Object.keys(data).filter(d=>data[d].p&&!(data[addDays(d,-1)]&&data[addDays(d,-1)].p)).sort();
+  const st=Object.keys(data).filter(d=>isP(data[d])&&!isP(data[addDays(d,-1)])).sort();
   return st.map((s0,k)=>{
     const nx=st[k+1]||null;
-    const T=Object.keys(data).filter(d=>d>=s0&&(!nx||d<nx)&&data[d].t!=null).sort().map(d=>({d,t:adj(data[d]),n:diff(d,s0)+1}));
+    const T=Object.keys(data).filter(d=>d>=s0&&(!nx||d<nx)&&data[d].t!=null&&!data[d].x).sort().map(d=>({d,t:adj(data[d]),n:diff(d,s0)+1}));
     const sh=shift(T);
-    return{s:s0,e:nx,len:nx?diff(nx,s0):null,T,sh,fh:sh?T[sh.i].n:null,cf:sh?T[sh.c].n:null};
+    let pl=0;while(isP(data[addDays(s0,pl)]))pl++;
+    return{s:s0,pl,e:nx,len:nx?diff(nx,s0):null,T,sh,fh:sh?T[sh.i].n:null,cf:sh?T[sh.c].n:null};
   });
 }
 /* Ovulation : la veille du 1er jour haut. Tant que le décalage n’est pas confirmé, elle est prévue d’après vos cycles précédents. */
@@ -198,7 +220,7 @@ function analyse(C,k){
   let ovu;
   if(c.sh)ovu=c.fh-1;
   else{const f=prev.map(x=>x.fh-1).sort((a,b)=>a-b);ovu=f.length?f[Math.floor(f.length/2)]:L-14;}
-  return{...c,L,ovu,fa:ovu-5,fb:c.sh?c.cf:ovu+1};
+  return{...c,L,ovu,nh:prev.length,fa:ovu-5,fb:c.sh?c.cf:ovu+1};
 }
 
 let back=0;
@@ -220,7 +242,7 @@ function render(){
       if(n>cur.cf){cls="low";a="Phase non fertile";b="Ovulation probable le "+dd(cur.ovu)+" (jour "+cur.ovu+"). Décalage confirmé le "+dd(cur.cf)+".";}
       else{cls="high";a="Encore fertile";b="Ovulation probable le "+dd(cur.ovu)+". Phase non fertile à partir du soir du jour "+cur.cf+".";}
     }else if((data[t]&&data[t].m==="filant")||(n>=cur.fa&&n<=cur.fb)){
-      cls="high";a="Période fertile estimée";b="Ovulation prévue vers le jour "+cur.ovu+" ("+dd(cur.ovu)+"). La température la confirmera après coup.";
+      cls="high";a="Période fertile estimée";b="Ovulation estimée vers le jour "+cur.ovu+" ("+dd(cur.ovu)+"), d’après "+(cur.nh?cur.nh+" cycle(s) précédent(s)":"un cycle standard")+". Ce n’est qu’une estimation : la température la confirmera après coup.";
     }else if(n<cur.fa){cls="mid";a="Avant la période fertile";b="Début estimé au jour "+cur.fa+" ("+dd(cur.fa)+").";}
     else{cls="mid";a="Ovulation probablement passée";b="Attendez 3 températures hautes pour la confirmer.";}
     band.className="band "+cls;
@@ -229,14 +251,14 @@ function render(){
     A=analyse(C,C.length-1-back);
     const N=A.e?A.len:Math.max(A.L,n,...A.T.map(x=>x.n))+1;
     $("#cyclbl").textContent=A.e?"Cycle du "+fr(A.s)+" au "+fr(addDays(A.e,-1))+" ("+A.len+" jours)":"Cycle en cours, depuis le "+fr(A.s);
-    drawChart(A,N);
+    drawChart(A,N);explain(A);
   }
-  $("#cprev").disabled=back>=C.length-1;$("#cnext").disabled=back===0;
-  const has=d=>data[d].t!=null||data[d].m||data[d].p;
+  $("#cprev").disabled=back>=C.length-1;$("#cnext").disabled=back===0;stats(C);
+  const has=d=>data[d].t!=null||data[d].m||data[d].p||data[d].un||data[d].nt;
   const keys=Object.keys(data).filter(d=>has(d)&&(!A||(d>=A.s&&(!A.e||d<A.e)))).sort().reverse().slice(0,A?100:14);
   $("#hist").innerHTML=keys.length?keys.map(d=>{
     const e=data[d];
-    return "<li><button class='row' data-d='"+d+"'><b>"+fr(d)+"</b><span>"+(e.t!=null?num(e.t)+" °C"+(e.h?" à "+e.h:"")+(adj(e)!==e.t?" (corrigée "+num(adj(e))+")":""):"pas de température")+"</span>"+(e.m?"<span>glaire "+e.m+"</span>":"")+(e.p?"<span class=r>règles</span>":"")+"</button></li>";
+    return "<li><button class='row' data-d='"+d+"'><b>"+fr(d)+"</b><span>"+(e.t!=null?num(e.t)+" °C"+(e.h?" à "+e.h:"")+(adj(e)!==e.t?" (corrigée "+num(adj(e))+")":""):"pas de température")+"</span>"+(e.m?"<span>glaire "+e.m+"</span>":"")+(e.p?"<span class=r>règles "+["","traces","faibles","moyennes","abondantes"][e.p===true?3:e.p]+"</span>":"")+(e.un?"<span>union</span>":"")+(e.x?"<span>température ignorée</span>":"")+(e.nt?"<span>"+e.nt.replace(/&/g,"&amp;").replace(/</g,"&lt;")+"</span>":"")+"</button></li>";
   }).join(""):"<li><span>Aucune saisie pour l’instant.</span></li>";
 }
 
@@ -244,25 +266,34 @@ function drawChart(A,N){
   const T=A.T;
   if(!T.length){$("#chart").innerHTML="<p class='small'>Aucune température enregistrée ce cycle.</p>";return;}
   const W=340,H=190,L=34,R=8,B=24,Tp=10;
-  const vals=T.map(x=>x.t),lo=Math.min(...vals)-0.1,hi=Math.max(...vals)+0.1;
+  const vals=T.map(x=>x.t),lo=Math.min(...vals)-0.1,hi=Math.max(...vals,A.sh?A.sh.base+thr():0)+0.1;
   const x=k=>L+(k-1)*(W-L-R)/(N-1),y=v=>H-B-(v-lo)*(H-B-Tp)/(hi-lo);
   const zone=(a,b,c)=>{const x0=x(Math.max(1,a)-0.5),x1=x(Math.min(N,b)+0.5);return x1>x0?"<rect class='"+c+"' x='"+x0+"' y='"+Tp+"' width='"+(x1-x0)+"' height='"+(H-B-Tp)+"'/>":"";};
   let s="<svg viewBox='0 0 "+W+" "+H+"' role='img' aria-label='Courbe de température du cycle'>";
   if(A.sh)s+=zone(A.cf+1,N,"inf");
   if(A.sh||!A.e){
-    s+=zone(A.fa,A.fb,"fw");
+    s+=zone(A.fa,A.fb,A.sh?"fw":"fw est");
     const ox=x(A.ovu);
     s+="<line class='ov' x1='"+ox+"' x2='"+ox+"' y1='"+Tp+"' y2='"+(H-B)+"'/>";
-    s+="<text class='tx' x='"+ox+"' y='"+(Tp+9)+"' text-anchor='"+(ox>W-70?"end":"start")+"'> Ovulation"+(A.sh?"":" prévue")+" </text>";
+    s+="<text class='tx' x='"+ox+"' y='"+(Tp+9)+"' text-anchor='"+(ox>W-70?"end":"start")+"'> Ovulation"+(A.sh?"":" estimée")+" </text>";
   }
   s+="<line class='ax' x1='"+L+"' y1='"+(H-B)+"' x2='"+(W-R)+"' y2='"+(H-B)+"'/>";
   for(let k=1;k<=N;k+=7)s+="<text class='tx' x='"+x(k)+"' y='"+(H-8)+"' text-anchor='middle'>J"+k+"</text>";
   s+="<text class='tx' x='"+(L-4)+"' y='"+(y(hi)+4)+"' text-anchor='end'>"+num(hi).slice(0,5)+"</text>";
   s+="<text class='tx' x='"+(L-4)+"' y='"+(y(lo)+4)+"' text-anchor='end'>"+num(lo).slice(0,5)+"</text>";
   if(A.sh)s+="<line class='cv' x1='"+L+"' x2='"+(W-R)+"' y1='"+y(A.sh.base)+"' y2='"+y(A.sh.base)+"'/>";
+  if($("#interp").checked&&A.sh){
+    const th=A.sh.base+thr();
+    s+="<line class='th' x1='"+L+"' x2='"+(W-R)+"' y1='"+y(th)+"' y2='"+y(th)+"'/>";
+    T.slice(A.sh.i-6,A.sh.i).forEach(p=>s+="<circle class='ring' cx='"+x(p.n)+"' cy='"+y(p.t)+"' r='7'/>");
+  }
   s+="<polyline class='ln' points='"+T.map(p=>x(p.n)+","+y(p.t)).join(" ")+"'/>";
   s+=T.map(p=>"<circle class='dt' cx='"+x(p.n)+"' cy='"+y(p.t)+"' r='3'/>").join("");
-  for(let k=1;k<=N;k++){const d=addDays(A.s,k-1);if(data[d]&&data[d].p)s+="<circle class='pd' cx='"+x(k)+"' cy='"+(H-B-5)+"' r='3'/>";}
+  for(let k=1;k<=N;k++){
+    const e=data[addDays(A.s,k-1)];if(!e)continue;
+    if(e.p)s+="<circle class='pd' cx='"+x(k)+"' cy='"+(H-B-5)+"' r='"+(2+(e.p===true?3:e.p)*0.5)+"'/>";
+    if(e.un)s+="<text class='un' x='"+x(k)+"' y='"+(H-B-14)+"' text-anchor='middle'>♥</text>";
+  }
   $("#chart").innerHTML=s+"</svg>";
 }
 
@@ -272,17 +303,17 @@ function fill(){
   $("#temp").value=e.t!=null?num(e.t):"";
   $("#hour").value=e.h||nowHM();
   $("#mucus").value=e.m||"";
-  $("#period").checked=!!e.p;
+  $("#period").value=e.p===true?3:(e.p||0);$("#xcl").checked=!!e.x;$("#union").checked=!!e.un;$("#note").value=e.nt||"";
 }
 $("#date").onchange=fill;
 $("#save").onclick=async()=>{
   const d=$("#date").value;if(!d)return;
   const t=parseFloat($("#temp").value.replace(",","."));
   if(!isNaN(t)&&(t<34||t>42)){$("#savemsg").textContent="Température hors limites (34 à 42 °C).";return;}
-  const e={t:isNaN(t)?null:t,h:isNaN(t)?null:($("#hour").value||null),m:$("#mucus").value,p:$("#period").checked,u:Date.now()};
-  const vide=e.t==null&&!e.m&&!e.p;
+  const e={t:isNaN(t)?null:t,h:isNaN(t)?null:($("#hour").value||null),m:$("#mucus").value,p:+$("#period").value,un:$("#union").checked,x:!isNaN(t)&&$("#xcl").checked,nt:$("#note").value.trim(),u:Date.now()};
+  const vide=e.t==null&&!e.m&&!e.p&&!e.un&&!e.nt;
   if(vide&&!data[d]){$("#savemsg").textContent="Rien à enregistrer.";return;}
-  data[d]=e;
+  logChange(d,data[d]);data[d]=e;
   await persist();render();$("#savemsg").textContent=vide?"Jour effacé":"Enregistré";sync();
 };
 
@@ -306,6 +337,7 @@ function start(){
   $("#lock").hidden=true;$("#app").hidden=false;
   $("#corr").checked=cfg.corr!==false;$("#date").value=today();fill();render();
   ["url","key","email"].forEach(k=>$("#"+k).value=cfg[k]||"");
+  $("#coef").value=coef();$("#thr").value=thr();loadExtra();
   sync();
 }
 async function autoUnlock(){
@@ -341,23 +373,23 @@ async function auth(kind){
 $("#signup").onclick=()=>auth("up");
 $("#signin").onclick=()=>auth("in");
 $("#syncnow").onclick=()=>{saveCfg();sync();};
-async function sync(force){
+async function _sync(force){
   const c=client();if(!c)return;
   const {data:s}=await c.auth.getSession();
   if(!s.session){say("Non connecté.");return;}
   try{
-    let rows=[];
+    let rows=[];const rem={};
     if(force){const {error:e0}=await c.from("entries").delete().eq("user_id",s.session.user.id);if(e0)throw e0;}
     else{const q=await c.from("entries").select("day,payload");if(q.error)throw q.error;rows=q.data;}
     for(const r of rows){
       let e;try{e=await unseal(r.payload)}catch{say("La phrase secrète diffère de celle des données en ligne. Si elle a été changée sur l’autre téléphone, utilisez « Réinitialiser cet appareil ».");return;}
-      if(!data[r.day]||e.u>data[r.day].u)data[r.day]=e;
+      rem[r.day]=e.u;if(!data[r.day]||e.u>data[r.day].u)data[r.day]=e;
     }
     const up=[];
-    for(const d in data)up.push({user_id:s.session.user.id,day:d,payload:await seal(data[d])});
+    for(const d in data)if(force||rem[d]==null||data[d].u>rem[d])up.push({user_id:s.session.user.id,day:d,payload:await seal(data[d])});
     if(up.length){const {error:e2}=await c.from("entries").upsert(up);if(e2)throw e2;}
     await persist();render();
-    const n=new Date();say("Synchronisé à "+pad(n.getHours())+":"+pad(n.getMinutes())+".");
+    live();const n=new Date();say("Synchronisé à "+pad(n.getHours())+":"+pad(n.getMinutes())+".");
   }catch(e){say("Erreur : "+e.message);}
 }
 
@@ -472,7 +504,7 @@ $("#impx").onchange=async e=>{
     let n=0;
     for(const d in agg){
       const a=agg[d],o=data[d]||{};
-      data[d]={t:o.t!=null?o.t:(a.t!=null?a.t:null),h:o.h||a.h||null,m:o.m||a.m||"",p:!!(o.p||a.p),u:Date.now()};n++;
+      data[d]={t:o.t!=null?o.t:(a.t!=null?a.t:null),h:o.h||a.h||null,m:o.m||a.m||"",p:o.p||(a.p?3:0),u:Date.now()};n++;
     }
     if(!n){msg.textContent="Aucune donnée reconnue. Envoyez-moi quelques lignes du fichier pour que j’adapte l’import.";return;}
     await persist();render();msg.textContent=n+" jours importés. Vos saisies existantes ont été conservées.";sync();
@@ -480,6 +512,74 @@ $("#impx").onchange=async e=>{
   e.target.value="";
 };
 
+let busy=false,again=false,ch=null,hl=[];
+async function sync(f){if(busy){again=true;return;}busy=true;try{await _sync(f);}finally{busy=false;if(again){again=false;sync();}}}
+function live(){
+  const c=client();if(!c||ch)return;
+  ch=c.channel("entries").on("postgres_changes",{event:"*",schema:"public",table:"entries"},()=>sync()).subscribe();
+}
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&key)sync();});
+setInterval(()=>{if(!document.hidden&&key)sync();},60000);
+
+const hlSave=async()=>localStorage.setItem("hl",await seal(hl.slice(0,30)));
+function logChange(d,prev){hl.unshift({d,at:Date.now(),prev:prev?JSON.parse(JSON.stringify(prev)):null});hlSave();renderHL();}
+function renderHL(){
+  $("#hl").innerHTML=hl.slice(0,8).map((x,i)=>"<li><button class='row' data-i='"+i+"'><b>"+fr(x.d)+"</b><span>"+new Date(x.at).toLocaleString("fr-FR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})+"</span><span>Annuler</span></button></li>").join("")||"<li><span>Aucune modification.</span></li>";
+}
+$("#hl").onclick=e=>{
+  const b=e.target.closest("button.row");if(!b)return;
+  const i=+b.dataset.i,it=hl[i];if(!it)return;
+  data[it.d]=it.prev?{...it.prev,u:Date.now()}:{t:null,h:null,m:"",p:0,u:Date.now()};
+  hl.splice(i,1);hlSave();renderHL();
+  persist().then(()=>{render();sync();});
+};
+function renderBk(){
+  const k=Object.keys(localStorage).filter(x=>x.startsWith("bk-")).sort().reverse();
+  $("#bks").innerHTML=k.map(x=>"<option value='"+x+"'>Sauvegarde du "+fr(x.slice(3))+"</option>").join("")||"<option value=''>Aucune pour l’instant</option>";
+}
+async function loadExtra(){
+  try{const x=localStorage.getItem("hl");if(x)hl=await unseal(x);}catch{}
+  renderHL();renderBk();
+}
+$("#bkr").onclick=async()=>{
+  const k=$("#bks").value;
+  if(!k||!confirm("Remettre les jours de cette sauvegarde ? Les jours modifiés depuis seront écrasés."))return;
+  try{
+    const o=await unseal(localStorage.getItem(k));
+    for(const d in o)data[d]={...o[d],u:Date.now()};
+    await persist();render();sync();$("#bkmsg").textContent="Sauvegarde restaurée.";
+  }catch{$("#bkmsg").textContent="Restauration impossible.";}
+};
+function setCfg(k,id){
+  const v=parseFloat($(id).value.replace(",","."));
+  if(isNaN(v))return;
+  cfg[k]=v;localStorage.setItem("cfg",JSON.stringify(cfg));render();
+}
+$("#coef").onchange=()=>setCfg("coef","#coef");
+$("#thr").onchange=()=>setCfg("thr","#thr");
+$("#interp").onchange=render;
+
+function explain(A){
+  const el=$("#itxt"),pc=v=>String(v).replace(".",",");
+  $("#estnote").textContent=A.sh||A.e?"":"Estimation d’après "+(A.nh?A.nh+" cycle(s) précédent(s) avec décalage thermique":"un cycle standard de 28 jours")+" : fiabilité limitée. Elle sera remplacée par le résultat réel dès que la température aura confirmé l’ovulation.";
+  if(!$("#interp").checked){el.innerHTML="";return;}
+  if(!A.sh){el.textContent="Pas de décalage thermique confirmé sur ce cycle : rien à interpréter.";return;}
+  const b=A.sh,T=A.T,six=T.slice(b.i-6,b.i),hi=T.slice(b.i,b.c+1),th=b.base+thr();
+  el.innerHTML=[
+    "<b>Ligne de base</b> : les 6 températures précédant la montée (jours "+six.map(x=>x.n).join(", ")+") ; la plus haute vaut "+num(b.base)+" °C.",
+    "<b>Jours hauts</b> : "+hi.map(x=>"J"+x.n+" ("+num(x.t)+")").join(", ")+", tous au-dessus de la ligne de base.",
+    "<b>Seuil</b> : le 3ᵉ jour haut doit atteindre "+num(th)+" °C (ligne de base + "+pc(thr())+"). "+(b.c===b.i+2?"Atteint au jour "+A.cf+".":"Non atteint : une 4ᵉ température haute, au jour "+A.cf+", confirme le décalage."),
+    "<b>Ovulation probable</b> : la veille du 1er jour haut, soit le jour "+A.ovu+".",
+    "<b>Période fertile</b> : du jour "+A.fa+" (5 jours avant l’ovulation) jusqu’au soir du jour "+A.cf+" ; phase non fertile ensuite."
+  ].join("<br>");
+}
+function stats(C){
+  const cl=C.filter(c=>c.e),ln=cl.map(c=>c.len),sh=cl.filter(c=>c.sh);
+  const avg=a=>Math.round(a.reduce((x,y)=>x+y,0)/a.length*10)/10,li=["Cycles terminés : "+cl.length];
+  if(ln.length){li.push("Durée moyenne : "+avg(ln)+" jours (de "+Math.min(...ln)+" à "+Math.max(...ln)+")");li.push("Règles : "+avg(cl.map(c=>c.pl))+" jours en moyenne");}
+  if(sh.length){li.push("Ovulation moyenne : jour "+avg(sh.map(c=>c.fh-1))+" ("+sh.length+" cycle(s))");li.push("Après l’ovulation : "+avg(sh.map(c=>c.len-c.fh+1))+" jours en moyenne");}
+  $("#stats").innerHTML=li.map(x=>"<li><span>"+x+"</span></li>").join("");
+}
 $("#cprev").onclick=()=>{back++;render();};
 $("#cnext").onclick=()=>{back--;render();};
 $("#hist").onclick=e=>{
