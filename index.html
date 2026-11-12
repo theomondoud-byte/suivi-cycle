@@ -33,6 +33,10 @@ svg{width:100%;height:auto;display:block}
 .ax{stroke:var(--line)}.tx{fill:var(--mute);font-size:10px}
 .fw{fill:var(--hi)}.ln{fill:none;stroke:var(--acc);stroke-width:2}.dt{fill:var(--acc)}
 .cv{stroke:var(--mute);stroke-dasharray:4 3}.pd{fill:var(--per)}
+.inf{fill:var(--lo)}.ov{stroke:var(--ink);stroke-dasharray:2 3}
+.nav{display:flex;align-items:center;gap:8px;margin-bottom:12px}.nav span{flex:1;text-align:center;font-size:14px}.nav button{width:48px;margin:0}
+button:disabled{opacity:.4}
+li button.row{display:flex;gap:12px;width:100%;margin:0;padding:8px 0;border:0;border-radius:0;background:transparent;color:var(--ink);font-weight:400;text-align:left}
 .small{font-size:13px;color:var(--mute);margin:8px 0 0}
 ul{list-style:none;margin:0;padding:0}
 li{display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
@@ -78,13 +82,15 @@ footer{padding:16px;font-size:13px;color:var(--mute)}
 
   <section>
     <h2>Courbe du cycle</h2>
+    <div class="nav"><button id="cprev" class="alt" aria-label="Cycle précédent">‹</button><span id="cyclbl"></span><button id="cnext" class="alt" aria-label="Cycle suivant">›</button></div>
     <label class="chk"><input id="corr" type="checkbox" checked>Corriger selon l’heure de mesure</label>
     <div id="chart"></div>
-    <p class="small">La zone jaune montre la période fertile estimée. La ligne pointillée apparaît quand le décalage thermique est détecté.</p>
+    <p class="small">Zone jaune : période fertile. Zone verte : phase non fertile, une fois le décalage thermique confirmé. Trait vertical : ovulation, prévue d’après vos cycles précédents tant que la température ne l’a pas confirmée. Ligne pointillée horizontale : ligne de base du décalage.</p>
   </section>
 
   <section>
-    <h2>Derniers jours</h2>
+    <h2>Jours du cycle affiché</h2>
+    <p class="small">Touchez un jour pour le modifier.</p>
     <ul id="hist"></ul>
   </section>
 
@@ -116,7 +122,7 @@ footer{padding:16px;font-size:13px;color:var(--mute)}
     </details>
   </section>
 
-  <footer>Estimation indicative : cette application ne remplace pas une méthode contraceptive. Version 1.2.0</footer>
+  <footer>Estimation indicative : cette application ne remplace pas une méthode contraceptive. Version 1.3.0</footer>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
@@ -155,11 +161,15 @@ const fr=d=>d.slice(8)+"/"+d.slice(5,7);
 const num=t=>t.toFixed(2).replace(".",",");
 const nowHM=()=>{const d=new Date();return pad(d.getHours())+":"+pad(d.getMinutes());};
 
-/* Décalage thermique : 3 températures au-dessus des 6 précédentes, la 3ᵉ d’au moins 0,2 °C */
+/* Décalage thermique (règle des 3 sur 6) : 3 températures au-dessus des 6 précédentes, la 3ᵉ d’au moins 0,2 °C ;
+   à défaut, une 4ᵉ température au-dessus de la ligne de base confirme. */
 function shift(T){
   for(let i=6;i+2<T.length;i++){
     const base=Math.max(...T.slice(i-6,i).map(x=>x.t));
-    if(T[i].t>base&&T[i+1].t>base&&T[i+2].t>=base+0.2)return{i,base};
+    if(T[i].t>base&&T[i+1].t>base&&T[i+2].t>base){
+      if(T[i+2].t>=base+0.2-1e-9)return{i,base,c:i+2};
+      if(i+3<T.length&&T[i+3].t>base)return{i,base,c:i+3};
+    }
   }
   return null;
 }
@@ -170,65 +180,89 @@ const mins=h=>+h.slice(0,2)*60+ +h.slice(3,5);
 function refHour(){const m=Object.values(data).filter(e=>e.h).map(e=>mins(e.h)).sort((a,b)=>a-b);href=m.length?m[Math.floor(m.length/2)]:null;}
 function adj(e){return $("#corr").checked&&e.h&&href!=null?e.t-COEF*(mins(e.h)-href)/60:e.t;}
 
+/* Cycles : du premier jour des règles au jour précédant les règles suivantes */
+function cycles(){
+  const st=Object.keys(data).filter(d=>data[d].p&&!(data[addDays(d,-1)]&&data[addDays(d,-1)].p)).sort();
+  return st.map((s0,k)=>{
+    const nx=st[k+1]||null;
+    const T=Object.keys(data).filter(d=>d>=s0&&(!nx||d<nx)&&data[d].t!=null).sort().map(d=>({d,t:adj(data[d]),n:diff(d,s0)+1}));
+    const sh=shift(T);
+    return{s:s0,e:nx,len:nx?diff(nx,s0):null,T,sh,fh:sh?T[sh.i].n:null,cf:sh?T[sh.c].n:null};
+  });
+}
+/* Ovulation : la veille du 1er jour haut. Tant que le décalage n’est pas confirmé, elle est prévue d’après vos cycles précédents. */
+function analyse(C,k){
+  const c=C[k],prev=C.slice(0,k).filter(x=>x.sh);
+  const lens=C.slice(0,k).map(x=>x.len).filter(Boolean).slice(-6);
+  const L=lens.length?Math.min(40,Math.max(21,Math.round(lens.reduce((a,b)=>a+b)/lens.length))):28;
+  let ovu;
+  if(c.sh)ovu=c.fh-1;
+  else{const f=prev.map(x=>x.fh-1).sort((a,b)=>a-b);ovu=f.length?f[Math.floor(f.length/2)]:L-14;}
+  return{...c,L,ovu,fa:ovu-5,fb:c.sh?c.cf:ovu+1};
+}
+
+let back=0;
 function render(){
   const t=today();refHour();
-  const starts=Object.keys(data).filter(d=>data[d].p&&!(data[addDays(d,-1)]&&data[addDays(d,-1)].p)).sort();
-  let L=28;
-  if(starts.length>1){
-    const g=[];for(let i=1;i<starts.length;i++)g.push(diff(starts[i],starts[i-1]));
-    const r=g.slice(-6);L=Math.min(40,Math.max(21,Math.round(r.reduce((a,b)=>a+b)/r.length)));
-  }
-  const past=starts.filter(d=>d<=t),cs=past[past.length-1];
+  const C=cycles().filter(c=>c.s<=t);
+  if(back>C.length-1)back=Math.max(0,C.length-1);
   const band=$("#status");
-  if(!cs){
+  let A=null;
+  if(!C.length){
     band.className="band mid";
     $("#st1").textContent="Le suivi démarre avec vos règles";
     $("#st2").textContent="Enregistrez le premier jour des règles pour lancer le cycle.";
-    $("#chart").innerHTML="";
+    $("#chart").innerHTML="";$("#cyclbl").textContent="";
   }else{
-    const n=diff(t,cs)+1,ovu=L-14;
-    const T=Object.keys(data).filter(d=>d>=cs&&data[d].t!=null).sort().map(d=>({d,t:adj(data[d]),n:diff(d,cs)+1}));
-    const sh=shift(T);
-    let cls,a,b,fa,fb;
-    if(sh){
-      const fh=T[sh.i],conf=T[sh.i+2];
-      fa=fh.n-6;fb=fh.n;
-      if(t>=conf.d){cls="low";a="Phase non fertile";b="Décalage thermique confirmé depuis le "+fr(conf.d)+".";}
-      else{cls="high";a="Encore fertile";b="Décalage thermique en cours : attendez le 3ᵉ jour haut.";}
-    }else{
-      fa=ovu-5;fb=ovu+1;
-      if(data[t]&&data[t].m==="filant"||(n>=fa&&n<=fb)){cls="high";a="Période fertile estimée";b="Une glaire filante renforce ce signal.";}
-      else if(n<fa){cls="mid";a="Avant la période fertile";b="Début estimé au jour "+fa+" du cycle.";}
-      else{cls="mid";a="Fin de la fenêtre estimée";b="Attendez le décalage thermique pour confirmer l’ovulation.";}
-    }
+    const cur=analyse(C,C.length-1),n=diff(t,cur.s)+1,dd=k=>fr(addDays(cur.s,k-1));
+    let cls,a,b;
+    if(cur.sh){
+      if(n>cur.cf){cls="low";a="Phase non fertile";b="Ovulation probable le "+dd(cur.ovu)+" (jour "+cur.ovu+"). Décalage confirmé le "+dd(cur.cf)+".";}
+      else{cls="high";a="Encore fertile";b="Ovulation probable le "+dd(cur.ovu)+". Phase non fertile à partir du soir du jour "+cur.cf+".";}
+    }else if((data[t]&&data[t].m==="filant")||(n>=cur.fa&&n<=cur.fb)){
+      cls="high";a="Période fertile estimée";b="Ovulation prévue vers le jour "+cur.ovu+" ("+dd(cur.ovu)+"). La température la confirmera après coup.";
+    }else if(n<cur.fa){cls="mid";a="Avant la période fertile";b="Début estimé au jour "+cur.fa+" ("+dd(cur.fa)+").";}
+    else{cls="mid";a="Ovulation probablement passée";b="Attendez 3 températures hautes pour la confirmer.";}
     band.className="band "+cls;
     $("#st1").textContent=a;
     $("#st2").textContent="Jour "+n+" du cycle. "+b;
-    drawChart(T,sh,Math.max(L,n,...T.map(x=>x.n))+1,fa,fb,cs);
+    A=analyse(C,C.length-1-back);
+    const N=A.e?A.len:Math.max(A.L,n,...A.T.map(x=>x.n))+1;
+    $("#cyclbl").textContent=A.e?"Cycle du "+fr(A.s)+" au "+fr(addDays(A.e,-1))+" ("+A.len+" jours)":"Cycle en cours, depuis le "+fr(A.s);
+    drawChart(A,N);
   }
-  const keys=Object.keys(data).sort().reverse().slice(0,14);
+  $("#cprev").disabled=back>=C.length-1;$("#cnext").disabled=back===0;
+  const has=d=>data[d].t!=null||data[d].m||data[d].p;
+  const keys=Object.keys(data).filter(d=>has(d)&&(!A||(d>=A.s&&(!A.e||d<A.e)))).sort().reverse().slice(0,A?100:14);
   $("#hist").innerHTML=keys.length?keys.map(d=>{
     const e=data[d];
-    return "<li><b>"+fr(d)+"</b><span>"+(e.t!=null?num(e.t)+" °C"+(e.h?" à "+e.h:"")+(adj(e)!==e.t?" (corrigée "+num(adj(e))+")":""):"pas de température")+"</span>"+(e.m?"<span>glaire "+e.m+"</span>":"")+(e.p?"<span class=r>règles</span>":"")+"</li>";
+    return "<li><button class='row' data-d='"+d+"'><b>"+fr(d)+"</b><span>"+(e.t!=null?num(e.t)+" °C"+(e.h?" à "+e.h:"")+(adj(e)!==e.t?" (corrigée "+num(adj(e))+")":""):"pas de température")+"</span>"+(e.m?"<span>glaire "+e.m+"</span>":"")+(e.p?"<span class=r>règles</span>":"")+"</button></li>";
   }).join(""):"<li><span>Aucune saisie pour l’instant.</span></li>";
 }
 
-function drawChart(T,sh,N,fa,fb,cs){
+function drawChart(A,N){
+  const T=A.T;
   if(!T.length){$("#chart").innerHTML="<p class='small'>Aucune température enregistrée ce cycle.</p>";return;}
   const W=340,H=190,L=34,R=8,B=24,Tp=10;
   const vals=T.map(x=>x.t),lo=Math.min(...vals)-0.1,hi=Math.max(...vals)+0.1;
   const x=k=>L+(k-1)*(W-L-R)/(N-1),y=v=>H-B-(v-lo)*(H-B-Tp)/(hi-lo);
+  const zone=(a,b,c)=>{const x0=x(Math.max(1,a)-0.5),x1=x(Math.min(N,b)+0.5);return x1>x0?"<rect class='"+c+"' x='"+x0+"' y='"+Tp+"' width='"+(x1-x0)+"' height='"+(H-B-Tp)+"'/>":"";};
   let s="<svg viewBox='0 0 "+W+" "+H+"' role='img' aria-label='Courbe de température du cycle'>";
-  const x0=x(Math.max(1,fa)-0.5),x1=x(Math.min(N,fb)+0.5);
-  s+="<rect class='fw' x='"+x0+"' y='"+Tp+"' width='"+(x1-x0)+"' height='"+(H-B-Tp)+"'/>";
+  if(A.sh)s+=zone(A.cf+1,N,"inf");
+  if(A.sh||!A.e){
+    s+=zone(A.fa,A.fb,"fw");
+    const ox=x(A.ovu);
+    s+="<line class='ov' x1='"+ox+"' x2='"+ox+"' y1='"+Tp+"' y2='"+(H-B)+"'/>";
+    s+="<text class='tx' x='"+ox+"' y='"+(Tp+9)+"' text-anchor='"+(ox>W-70?"end":"start")+"'> Ovulation"+(A.sh?"":" prévue")+" </text>";
+  }
   s+="<line class='ax' x1='"+L+"' y1='"+(H-B)+"' x2='"+(W-R)+"' y2='"+(H-B)+"'/>";
   for(let k=1;k<=N;k+=7)s+="<text class='tx' x='"+x(k)+"' y='"+(H-8)+"' text-anchor='middle'>J"+k+"</text>";
   s+="<text class='tx' x='"+(L-4)+"' y='"+(y(hi)+4)+"' text-anchor='end'>"+num(hi).slice(0,5)+"</text>";
   s+="<text class='tx' x='"+(L-4)+"' y='"+(y(lo)+4)+"' text-anchor='end'>"+num(lo).slice(0,5)+"</text>";
-  if(sh)s+="<line class='cv' x1='"+L+"' x2='"+(W-R)+"' y1='"+y(sh.base)+"' y2='"+y(sh.base)+"'/>";
+  if(A.sh)s+="<line class='cv' x1='"+L+"' x2='"+(W-R)+"' y1='"+y(A.sh.base)+"' y2='"+y(A.sh.base)+"'/>";
   s+="<polyline class='ln' points='"+T.map(p=>x(p.n)+","+y(p.t)).join(" ")+"'/>";
   s+=T.map(p=>"<circle class='dt' cx='"+x(p.n)+"' cy='"+y(p.t)+"' r='3'/>").join("");
-  for(let k=1;k<=N;k++){const d=addDays(cs,k-1);if(data[d]&&data[d].p)s+="<circle class='pd' cx='"+x(k)+"' cy='"+(H-B-5)+"' r='3'/>";}
+  for(let k=1;k<=N;k++){const d=addDays(A.s,k-1);if(data[d]&&data[d].p)s+="<circle class='pd' cx='"+x(k)+"' cy='"+(H-B-5)+"' r='3'/>";}
   $("#chart").innerHTML=s+"</svg>";
 }
 
@@ -245,9 +279,11 @@ $("#save").onclick=async()=>{
   const d=$("#date").value;if(!d)return;
   const t=parseFloat($("#temp").value.replace(",","."));
   if(!isNaN(t)&&(t<34||t>42)){$("#savemsg").textContent="Température hors limites (34 à 42 °C).";return;}
-  const h=$("#hour").value||null;
-  data[d]={t:isNaN(t)?null:t,h,m:$("#mucus").value,p:$("#period").checked,u:Date.now()};
-  await persist();render();$("#savemsg").textContent="Enregistré";sync();
+  const e={t:isNaN(t)?null:t,h:isNaN(t)?null:($("#hour").value||null),m:$("#mucus").value,p:$("#period").checked,u:Date.now()};
+  const vide=e.t==null&&!e.m&&!e.p;
+  if(vide&&!data[d]){$("#savemsg").textContent="Rien à enregistrer.";return;}
+  data[d]=e;
+  await persist();render();$("#savemsg").textContent=vide?"Jour effacé":"Enregistré";sync();
 };
 
 /* Clé mémorisée sur l’appareil (non exportable) pour ne plus retaper la phrase */
@@ -444,6 +480,14 @@ $("#impx").onchange=async e=>{
   e.target.value="";
 };
 
+$("#cprev").onclick=()=>{back++;render();};
+$("#cnext").onclick=()=>{back--;render();};
+$("#hist").onclick=e=>{
+  const b=e.target.closest("button.row");if(!b)return;
+  $("#date").value=b.dataset.d;fill();
+  $("#savemsg").textContent="Modification du "+fr(b.dataset.d)+" : changez les valeurs, puis enregistrez. Tout vider efface le jour.";
+  window.scrollTo({top:0,behavior:"smooth"});
+};
 document.addEventListener("visibilitychange",()=>{
   if(!document.hidden&&!$("#app").hidden&&!(data[$("#date").value]||{}).h)$("#hour").value=nowHM();
 });
