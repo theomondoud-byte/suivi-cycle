@@ -42,7 +42,7 @@ li button.row{display:flex;gap:12px;width:100%;margin:0;padding:8px 0;border:0;b
 .nav2{display:flex;gap:8px;margin:0 0 12px}.nav2 button{margin:0}
 #bigwrap{position:fixed;inset:0;z-index:50;background:var(--bg);overflow:auto;padding:12px}#bigwrap[hidden]{display:none}#bigwrap>button{width:auto;padding:8px 20px;margin:0 0 8px}
 dialog{max-width:480px;width:calc(100% - 24px);max-height:92vh;overflow:auto;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);padding:16px}dialog::backdrop{background:rgba(0,0,0,.55)}
-.rf{fill:#f5a3c3;opacity:.55;stroke:none}.hit{fill:transparent;cursor:pointer}
+.gb{fill:#2a7fc0}.rf{fill:#f5a3c3;opacity:.55;stroke:none}.hit{fill:transparent;cursor:pointer}
 .small{font-size:13px;color:var(--mute);margin:8px 0 0}
 ul{list-style:none;margin:0;padding:0}
 li{display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
@@ -80,10 +80,10 @@ footer{padding:16px;font-size:13px;color:var(--mute)}
     <label class="chk"><input id="corr" type="checkbox" checked>Corriger selon l’heure de mesure</label>
     <div id="chart"></div>
     <p id="estnote" class="small"></p>
-    <label class="chk"><input id="interp" type="checkbox">Afficher l’interprétation du décalage thermique</label>
-    <label class="chk"><input id="retro" type="checkbox">Afficher en rose la fenêtre réellement fertile (rétrospective : ovulation −5 à +1 jour)</label>
+    <label class="chk"><input id="interp" type="checkbox" checked>Afficher l’interprétation du décalage thermique</label>
+    <label class="chk"><input id="retro" type="checkbox" checked>Afficher en rose la fenêtre réellement fertile (rétrospective : ovulation −5 à +1 jour)</label>
     <p id="itxt" class="small"></p>
-    <p class="small">Ligne « Interp. » : F jour fertile, Is soir infertile après observation de la journée, ? fertilité inconnue, Ij jour infertile (dès le 3ᵉ matin de température haute et stable). Tirets : NMB (niveau moyen bas) et trait haut (NMB + 0,3). Points entourés : les 3 points hauts. Températures arrondies au demi-dixième. Glissez le graphique pour voir tout le cycle ; appuyez longuement sur un jour pour voir et modifier ses valeurs.</p>
+    <p class="small">Ligne « Interp. » : F jour fertile, Is soir infertile après observation de la journée, ? fertilité inconnue, Ij jour infertile (dès le 3ᵉ matin de température haute et stable). Tirets : NMB (niveau moyen bas) et trait haut (NMB + 0,3). Points entourés : les 3 points hauts. Points rouges : règles (1 faibles, 2 moyennes, 3 abondantes). Points bleus : glaire (1 humide, 2 mouillée, 3 lubrifiée) ; tiret gris : sèche. Glissez le graphique pour voir tout le cycle ; appuyez longuement sur un jour pour voir et modifier ses valeurs.</p>
   </section>
 
   <section>
@@ -134,7 +134,7 @@ footer{padding:16px;font-size:13px;color:var(--mute)}
     </details>
   </section>
 
-  <footer>Estimation indicative : cette application ne remplace pas une méthode contraceptive. Version 1.7.2</footer>
+  <footer>Estimation indicative : cette application ne remplace pas une méthode contraceptive. Version 1.7.3</footer>
 </main>
 
 <div id="bigwrap" hidden><button id="bigclose">Fermer</button><div id="bigchart"></div></div>
@@ -287,7 +287,7 @@ function render(){
     band.className="band mid";
     $("#st1").textContent="Le suivi démarre avec vos règles";
     $("#st2").textContent="Enregistrez le premier jour des règles pour lancer le cycle.";
-    $("#chart").innerHTML="";$("#cyclbl").textContent="";
+    $("#chart").innerHTML="";$("#cyclbl").textContent="";$("#retro").parentElement.style.display="none";
   }else{
     const cur=analyse(C,C.length-1),n=diff(t,cur.s)+1,dd=k=>fr(addDays(cur.s,k-1));
     let cls,a,b;
@@ -354,8 +354,9 @@ function drawChart(A,N,big){
     s+="<text class='lb' x='"+X+"' y='"+(Yb+14)+"' text-anchor='middle' font-weight='700' font-size='10'>"+k+"</text>";
     const p=e.p?Math.max(1,(e.p===true?3:+e.p)-1):0;
     for(let j=0;j<p;j++)s+="<circle class='pd' cx='"+X+"' cy='"+(Yb+44-j*7)+"' r='3'/>";
-    const g=SC[e.m];
-    if(g)s+="<rect x='"+(X-10)+"' y='"+(Yb+77)+"' width='20' height='15' fill='"+g[1]+"'/><text x='"+X+"' y='"+(Yb+89)+"' text-anchor='middle' font-size='10' font-weight='700' fill='"+g[2]+"'>"+g[0]+"</text>";
+    const gn={"crémeuse":1,filant:2,lubrifie:3}[e.m];
+    if(gn)for(let j=0;j<gn;j++)s+="<circle class='gb' cx='"+X+"' cy='"+(Yb+92-j*7)+"' r='3'/>";
+    else if(e.m==="seche")s+="<rect x='"+(X-5)+"' y='"+(Yb+89)+"' width='10' height='3' fill='var(--mute)'/>";
     if(e.js)s+="<text x='"+X+"' y='"+(Yb+106)+"' text-anchor='middle' font-size='11' fill='var(--ink)'>▲</text>";
     if(e.nt)s+="<text x='"+X+"' y='"+(Yb+119)+"' text-anchor='middle' font-size='11' fill='var(--acc)'>✎</text>";
   }
@@ -641,7 +642,8 @@ $("#interp").onchange=$("#retro").onchange=render;
 
 function explain(A){
   const el=$("#itxt");
-  $("#estnote").textContent=($("#retro").checked&&!A.sh?"Fenêtre réellement fertile non déterminée : l’ovulation n’est pas confirmée sur ce cycle. ":"")+(A.sh||A.e?"":"Estimation d’après "+(A.nh?A.nh+" cycle(s) précédent(s) avec décalage thermique":"un cycle standard de 28 jours")+" : fiabilité limitée. Elle n’entre pas dans la méthode Cyclamen et sera remplacée par le résultat réel dès que la température aura confirmé l’ovulation.");
+  $("#retro").parentElement.style.display=A.sh?"":"none";
+  $("#estnote").textContent=(A.sh||A.e?"":"Estimation d’après "+(A.nh?A.nh+" cycle(s) précédent(s) avec décalage thermique":"un cycle standard de 28 jours")+" : fiabilité limitée. Elle n’entre pas dans la méthode Cyclamen et sera remplacée par le résultat réel dès que la température aura confirmé l’ovulation.");
   if(!$("#interp").checked){el.innerHTML="";return;}
   const g=A.gs?"<b>Ouverture</b> : première glaire sentie ou vue au jour "+A.gs+" ; le couple est fertile à partir de ce jour.":"<b>Ouverture</b> : aucune glaire sentie ou vue notée ce cycle.";
   if(!A.sh){el.innerHTML=g+"<br>Pas encore de 3 points hauts et stables : la fertilité reste ouverte une fois la glaire apparue.";return;}
