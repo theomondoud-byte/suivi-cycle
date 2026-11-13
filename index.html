@@ -38,11 +38,11 @@ svg{width:100%;height:auto;display:block}
 button:disabled{opacity:.4}
 li button.row{display:flex;gap:12px;width:100%;margin:0;padding:8px 0;border:0;border-radius:0;background:transparent;color:var(--ink);font-weight:400;text-align:left}
 .est{opacity:.55;stroke:var(--ink);stroke-dasharray:4 3}.th{stroke:var(--per);stroke-dasharray:6 3}.ring{fill:none;stroke:var(--acc);stroke-width:1.5}.un{fill:var(--per);font-size:11px}
-#chart{overflow-x:auto;-webkit-overflow-scrolling:touch}svg.ch{width:auto;max-width:none}.lb{fill:var(--ink);font-size:8px}.nm{stroke:#8a6b1f;stroke-dasharray:6 3}.gr{stroke:var(--line);stroke-width:.5}.ob{fill:var(--ink)}.ring2{fill:none;stroke:var(--mute);stroke-dasharray:2 2}
+#chart,#bigchart{-webkit-touch-callout:none;user-select:none}#chart{overflow-x:auto;-webkit-overflow-scrolling:touch}svg.ch{width:auto;max-width:none}.lb{fill:var(--ink);font-size:8px}.nm{stroke:#8a6b1f;stroke-dasharray:6 3}.gr{stroke:var(--line);stroke-width:.5}.ob{fill:var(--ink)}.ring2{fill:none;stroke:var(--mute);stroke-dasharray:2 2}
 .nav2{display:flex;gap:8px;margin:0 0 12px}.nav2 button{margin:0}
 #bigwrap{position:fixed;inset:0;z-index:50;background:var(--bg);overflow:auto;padding:12px}#bigwrap[hidden]{display:none}#bigwrap>button{width:auto;padding:8px 20px;margin:0 0 8px}
 dialog{max-width:480px;width:calc(100% - 24px);max-height:92vh;overflow:auto;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);padding:16px}dialog::backdrop{background:rgba(0,0,0,.55)}
-.rf{fill:none;stroke:#0a8f6a;stroke-width:2.5}.hit{fill:transparent;cursor:pointer}
+.rf{fill:#f5a3c3;opacity:.55;stroke:none}.hit{fill:transparent;cursor:pointer}
 .small{font-size:13px;color:var(--mute);margin:8px 0 0}
 ul{list-style:none;margin:0;padding:0}
 li{display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
@@ -81,9 +81,9 @@ footer{padding:16px;font-size:13px;color:var(--mute)}
     <div id="chart"></div>
     <p id="estnote" class="small"></p>
     <label class="chk"><input id="interp" type="checkbox">Afficher l’interprétation du décalage thermique</label>
-    <label class="chk"><input id="retro" type="checkbox">Afficher la fenêtre réellement fertile (rétrospective : ovulation −5 à +1 jour)</label>
+    <label class="chk"><input id="retro" type="checkbox">Afficher en rose la fenêtre réellement fertile (rétrospective : ovulation −5 à +1 jour)</label>
     <p id="itxt" class="small"></p>
-    <p class="small">Ligne « Interp. » : F jour fertile, Is soir infertile après observation de la journée, ? fertilité inconnue, Ij jour infertile (dès le 3ᵉ matin de température haute et stable). Tirets : NMB (niveau moyen bas) et trait haut (NMB + 0,3). Points entourés : les 3 points hauts. Températures arrondies au demi-dixième. Glissez le graphique pour voir tout le cycle ; touchez un jour pour voir et modifier ses valeurs.</p>
+    <p class="small">Ligne « Interp. » : F jour fertile, Is soir infertile après observation de la journée, ? fertilité inconnue, Ij jour infertile (dès le 3ᵉ matin de température haute et stable). Tirets : NMB (niveau moyen bas) et trait haut (NMB + 0,3). Points entourés : les 3 points hauts. Températures arrondies au demi-dixième. Glissez le graphique pour voir tout le cycle ; appuyez longuement sur un jour pour voir et modifier ses valeurs.</p>
   </section>
 
   <section>
@@ -134,7 +134,7 @@ footer{padding:16px;font-size:13px;color:var(--mute)}
     </details>
   </section>
 
-  <footer>Estimation indicative : cette application ne remplace pas une méthode contraceptive. Version 1.7.1</footer>
+  <footer>Estimation indicative : cette application ne remplace pas une méthode contraceptive. Version 1.7.2</footer>
 </main>
 
 <div id="bigwrap" hidden><button id="bigclose">Fermer</button><div id="bigchart"></div></div>
@@ -317,7 +317,7 @@ function render(){
 function drawChart(A,N,big){
   const T=A.T,cs=A.s,box=big?$("#bigchart"):$("#chart");
   if(!T.length){box.innerHTML="<p class='small'>Aucune température enregistrée ce cycle.</p>";return;}
-  const L=42,R=14,Y0=64,aw=big?innerWidth-24:0,ah=big?innerHeight-70:0,sc=big?Math.min(2,Math.max(1,aw/900)):1,CW=big?Math.max(10,(aw/sc-L-R)/N):26,PH=big?Math.max(90,ah/sc-Y0-124):220,Yb=Y0+PH,H=Yb+124,W=L+N*CW+R;
+  const L=42,R=14,Y0=64,aw=big?innerWidth-24:0,ah=big?innerHeight-70:0,sc=big?Math.min(2,Math.max(1,aw/900)):1,CW=big?Math.max(10,(aw/sc-L-R)/N):26,PH=big?Math.max(90,Math.min(ah/sc-Y0-124,0.6*aw/sc)):220,Yb=Y0+PH,H=Yb+124,W=L+N*CW+R;
   let lo=Math.min(...T.map(x=>x.t)),hi=Math.max(...T.map(x=>x.t));
   if(A.sh){hi=Math.max(hi,A.sh.base+A.sh.d);lo=Math.min(lo,A.sh.base);}
   lo=Math.floor((lo-0.05)*10+1e-9)/10;hi=Math.ceil((hi+0.05)*10-1e-9)/10;
@@ -415,7 +415,7 @@ $("#go").onclick=async()=>{
 };
 function start(){
   $("#lock").hidden=true;$("#app").hidden=false;
-  $("#corr").checked=cfg.corr!==false;fill("");render();
+  $("#corr").checked=cfg.corr2!==false;fill("");render();
   ["url","key","email"].forEach(k=>$("#"+k).value=cfg[k]||"");
   $("#coef").value=coef();$("#r4").checked=!!cfg.r4;$("#d2").checked=!!cfg.d2;$("#cons").checked=!!cfg.cons;$("#cm").value=cfg.cm||"perso";$("#bd").value=cfg.bd||"";loadExtra();
   sync();
@@ -508,7 +508,7 @@ function resetDevice(){
   kdel().catch(()=>{}).then(()=>{localStorage.removeItem("blob");location.reload();});
 }
 $("#rst").onclick=$("#rst2").onclick=resetDevice;
-$("#corr").onchange=()=>{cfg.corr=$("#corr").checked;localStorage.setItem("cfg",JSON.stringify(cfg));render();};
+$("#corr").onchange=()=>{cfg.corr2=$("#corr").checked;localStorage.setItem("cfg",JSON.stringify(cfg));render();};
 
 /* Import depuis un autre site : CSV ou JSON, colonnes reconnues d’après leurs noms */
 const dkey=/date|jour|day/i,tkey=/temp/i,hkey=/heure|hour|time/i,mkey=/glaire|mucus|cervical|fluid|discharge/i,pkey=/r[eè]gle|period|menstru|flow|bleed/i,no=/^(0|non|no|false|none|aucun|null|undefined|)$/i;
@@ -680,7 +680,19 @@ $("#dnext").onclick=()=>openDlg(addDays(md,1));
 $("#dclose").onclick=()=>$("#dlg").close();
 $("#msave").onclick=()=>saveDay("m",md);
 $("#hist").onclick=e=>{const b=e.target.closest("button.row");if(b)openDlg(b.dataset.d);};
-$("#chart").onclick=$("#bigchart").onclick=e=>{const t=e.target.closest("[data-d]");if(t)openDlg(t.dataset.d);};
+function longPress(box){
+  let tm=null,sx=0,sy=0;
+  const stop=()=>{clearTimeout(tm);tm=null;};
+  box.addEventListener("pointerdown",e=>{
+    const t=e.target.closest("[data-d]");if(!t)return;
+    sx=e.clientX;sy=e.clientY;stop();
+    tm=setTimeout(()=>{tm=null;openDlg(t.dataset.d);},500);
+  });
+  box.addEventListener("pointermove",e=>{if(tm&&Math.hypot(e.clientX-sx,e.clientY-sy)>8)stop();});
+  ["pointerup","pointercancel","pointerleave","scroll"].forEach(ev=>box.addEventListener(ev,stop));
+  box.addEventListener("contextmenu",e=>e.preventDefault());
+}
+longPress($("#chart"));longPress($("#bigchart"));
 $("#bigopen").onclick=()=>{$("#bigwrap").hidden=false;if(lastA)drawChart(lastA,lastN,true);};
 $("#bigclose").onclick=()=>{$("#bigwrap").hidden=true;};
 addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("#dlg").open)$("#bigwrap").hidden=true;});
