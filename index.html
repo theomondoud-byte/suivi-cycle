@@ -128,13 +128,14 @@ footer{padding:16px;font-size:13px;color:var(--mute)}
       <p id="bkmsg" class="small" role="status"></p>
       <label>Sauvegardes automatiques (une par jour, 7 jours)<select id="bks"></select></label>
       <button id="bkr" class="alt">Restaurer cette sauvegarde</button>
+      <button id="rec" class="alt">Récupérer les glaires vues perdues</button>
       <p class="small">Dernières modifications faites sur cet appareil (touchez pour annuler) :</p>
       <ul id="hl"></ul>
       <button id="lockbtn" class="alt">Verrouiller</button>
     </details>
   </section>
 
-  <footer>Estimation indicative : cette application ne remplace pas une méthode contraceptive. Version 1.7.4</footer>
+  <footer>Estimation indicative : cette application ne remplace pas une méthode contraceptive. Version 1.7.5</footer>
 </main>
 
 <div id="bigwrap" hidden><button id="bigclose">Fermer</button><div id="bigchart"></div></div>
@@ -633,6 +634,15 @@ $("#bkr").onclick=async()=>{
     for(const d in o)data[d]={...o[d],u:Date.now()};
     await persist();render();sync();$("#bkmsg").textContent="Sauvegarde restaurée.";
   }catch{$("#bkmsg").textContent="Restauration impossible.";}
+};
+$("#rec").onclick=async()=>{
+  let n=0;
+  const fix=(d,mo)=>{if(mo&&data[d]&&!data[d].mo){data[d].mo=mo;data[d].u=Date.now();n++;}};
+  const ks=Object.keys(localStorage).filter(x=>x.startsWith("bk-")).sort().reverse();
+  for(const k of ks){try{const o=await unseal(localStorage.getItem(k));for(const d in o)fix(d,o[d].mo);}catch{}}
+  hl.forEach(x=>x.prev&&fix(x.d,x.prev.mo));
+  if(n){await persist();render();sync();}
+  $("#bkmsg").textContent=n?n+" observation(s) de glaire récupérée(s). Les autres valeurs n’ont pas été modifiées.":"Rien à récupérer sur cet appareil : aucune sauvegarde ni historique ne contient de glaire vue manquante.";
 };
 function setCfg(k,id){
   const v=parseFloat($(id).value.replace(",","."));
