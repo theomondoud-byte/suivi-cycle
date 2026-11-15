@@ -83,7 +83,7 @@ footer{padding:16px;font-size:13px;color:var(--mute)}
     <label class="chk"><input id="interp" type="checkbox" checked>Afficher l’interprétation du décalage thermique</label>
     <label class="chk"><input id="retro" type="checkbox" checked>Afficher en rose la fenêtre réellement fertile (rétrospective : ovulation −5 à +1 jour)</label>
     <p id="itxt" class="small"></p>
-    <p class="small">Ligne « Interp. » : F jour fertile, Is soir infertile après observation de la journée, ? fertilité inconnue, Ij jour infertile (dès le 3ᵉ matin de température haute et stable). Tirets : NMB (niveau moyen bas) et trait haut (NMB + 0,3). Points entourés : les 3 points hauts. Points rouges : règles (1 faibles, 2 moyennes, 3 abondantes). Points bleus : glaire (1 humide, 2 mouillée, 3 lubrifiée) ; tiret gris : sèche. Glissez le graphique pour voir tout le cycle ; appuyez longuement sur un jour pour voir et modifier ses valeurs.</p>
+    <p class="small">Ligne « Interp. » : F jour fertile, Is soir infertile après observation de la journée, ? fertilité inconnue, Ij jour infertile (dès le 3ᵉ matin de température haute et stable). Tirets : NMB (niveau moyen bas) et trait haut (NMB + 0,3). Points entourés : les 3 points hauts. Points rouges : règles (1 faibles, 2 moyennes, 3 abondantes). Barres : glaire (rien, épaisse, élastique). Points bleus : sensation (1 humide, 2 mouillée, 3 lubrifiée) ; tiret gris : sèche. Glissez le graphique pour voir tout le cycle ; appuyez longuement sur un jour pour voir et modifier ses valeurs.</p>
   </section>
 
   <section>
@@ -134,7 +134,7 @@ footer{padding:16px;font-size:13px;color:var(--mute)}
     </details>
   </section>
 
-  <footer>Estimation indicative : cette application ne remplace pas une méthode contraceptive. Version 1.7.3</footer>
+  <footer>Estimation indicative : cette application ne remplace pas une méthode contraceptive. Version 1.7.4</footer>
 </main>
 
 <div id="bigwrap" hidden><button id="bigclose">Fermer</button><div id="bigchart"></div></div>
@@ -342,7 +342,7 @@ function drawChart(A,N,big){
   s+="<polyline class='ln' points='"+T.map(p=>xc(p.n)+","+y(p.t)).join(" ")+"'/>";
   s+=T.map(p=>"<circle class='dt' cx='"+xc(p.n)+"' cy='"+y(p.t)+"' r='3'/><text class='lb' x='"+xc(p.n)+"' y='"+(y(p.t)-9)+"' text-anchor='middle'>"+num(p.t)+"</text>").join("");
   const lab=(t,yy)=>"<text class='tx' x='2' y='"+yy+"' font-size='8'>"+t+"</text>";
-  s+=lab("Interp.",Y0-22)+lab("Unions",Y0-6)+lab("Cycle",Yb+14)+lab("Règles",Yb+38)+lab("Glaire",Yb+88)+lab("Notes",Yb+118);
+  s+=lab("Interp.",Y0-22)+lab("Unions",Y0-6)+lab("Cycle",Yb+14)+lab("Règles",Yb+38)+lab("Glaire",Yb+72)+lab("Sensation",Yb+88)+lab("Notes",Yb+118);
   const COL={F:["#f0a12b","#222"],Ij:["#f3d86b","#222"],Is:["#fbefb0","#222"],"?":["#ddd","#222"]};
   const SC={seche:["S","#d9d9d9","#222"],"crémeuse":["H","#9ad1e6","#0b2a3a"],filant:["M","#2a7fc0","#fff"],lubrifie:["L","#8fd0a8","#0b2a3a"]};
   for(let k=1;k<=N;k++){
@@ -354,6 +354,8 @@ function drawChart(A,N,big){
     s+="<text class='lb' x='"+X+"' y='"+(Yb+14)+"' text-anchor='middle' font-weight='700' font-size='10'>"+k+"</text>";
     const p=e.p?Math.max(1,(e.p===true?3:+e.p)-1):0;
     for(let j=0;j<p;j++)s+="<circle class='pd' cx='"+X+"' cy='"+(Yb+44-j*7)+"' r='3'/>";
+    const hb={rien:3,epaisse:9,elastique:17}[e.mo];
+    if(hb)s+="<rect class='ob' x='"+(X-5)+"' y='"+(Yb+76-hb)+"' width='10' height='"+hb+"'/>";
     const gn={"crémeuse":1,filant:2,lubrifie:3}[e.m];
     if(gn)for(let j=0;j<gn;j++)s+="<circle class='gb' cx='"+X+"' cy='"+(Yb+92-j*7)+"' r='3'/>";
     else if(e.m==="seche")s+="<rect x='"+(X-5)+"' y='"+(Yb+89)+"' width='10' height='3' fill='var(--mute)'/>";
@@ -369,7 +371,8 @@ function drawChart(A,N,big){
 const FORM=p=>`<label>Température au réveil (°C)<input id="${p}temp" inputmode="decimal" placeholder="36,45"></label>
 <label>Heure de la mesure<input id="${p}hour" type="time"></label>
 <label class="chk"><input id="${p}xcl" type="checkbox">Température perturbée (à ignorer)</label>
-<label>Glaire<select id="${p}mucus"><option value="">Non notée</option><option value="seche">Sèche (S)</option><option value="crémeuse">Humide (H)</option><option value="filant">Mouillée (M)</option><option value="lubrifie">Lubrifiée (L)</option></select></label>
+<label>Sensation<select id="${p}mucus"><option value="">Non notée</option><option value="seche">Sèche (S)</option><option value="crémeuse">Humide (H)</option><option value="filant">Mouillée (M)</option><option value="lubrifie">Lubrifiée (L)</option></select></label>
+<label>Glaire<select id="${p}obs"><option value="">Non notée</option><option value="rien">Rien vu</option><option value="epaisse">Épaisse</option><option value="elastique">Élastique</option></select></label>
 <label>Règles<select id="${p}period"><option value="0">Aucune</option><option value="2">Faibles</option><option value="3">Moyennes</option><option value="4">Abondantes</option></select></label>
 <label class="chk"><input id="${p}union" type="checkbox">Union</label>
 <label class="chk"><input id="${p}js" type="checkbox">Jour sommet (dernier jour de glaire mouillée, noté après coup)</label>
@@ -382,7 +385,7 @@ function fill(p,d){
   d=d||today();const e=data[d]||{},g=id=>$("#"+p+id);
   g("temp").value=e.t!=null?num(e.t):"";
   g("hour").value=e.h||((d===today()&&e.t==null)?nowHM():"");
-  g("mucus").value=e.m||"";
+  g("mucus").value=e.m||"";g("obs").value=e.mo||"";
   g("period").value=e.p===true?3:(e.p===1?2:(e.p||0));
   g("union").checked=!!e.un;g("js").checked=!!e.js;g("gp").checked=!!e.gp;g("xcl").checked=!!e.x;
   g("kg").value=e.w!=null?String(e.w).replace(".",","):"";g("note").value=e.nt||"";g("msg").textContent="";
@@ -390,8 +393,8 @@ function fill(p,d){
 async function saveDay(p,d){
   const g=id=>$("#"+p+id),t=parseFloat(g("temp").value.replace(",",".")),w=parseFloat(g("kg").value.replace(",","."));
   if(!isNaN(t)&&(t<34||t>42)){g("msg").textContent="Température hors limites (34 à 42 °C).";return;}
-  const e={t:isNaN(t)?null:t,h:isNaN(t)?null:(g("hour").value||null),m:g("mucus").value,p:+g("period").value,un:g("union").checked,x:!isNaN(t)&&g("xcl").checked,nt:g("note").value.trim(),js:g("js").checked,gp:g("gp").checked,w:isNaN(w)?null:w,u:Date.now()};
-  const vide=e.t==null&&!e.m&&!e.p&&!e.un&&!e.nt&&!e.js&&!e.gp&&e.w==null;
+  const e={t:isNaN(t)?null:t,h:isNaN(t)?null:(g("hour").value||null),m:g("mucus").value,p:+g("period").value,un:g("union").checked,x:!isNaN(t)&&g("xcl").checked,nt:g("note").value.trim(),mo:g("obs").value,js:g("js").checked,gp:g("gp").checked,w:isNaN(w)?null:w,u:Date.now()};
+  const vide=e.t==null&&!e.m&&!e.p&&!e.un&&!e.nt&&!e.mo&&!e.js&&!e.gp&&e.w==null;
   if(vide&&!data[d]){g("msg").textContent="Rien à enregistrer.";return;}
   logChange(d,data[d]);data[d]=e;
   await persist();render();g("msg").textContent=vide?"Jour effacé":"Enregistré";sync();
