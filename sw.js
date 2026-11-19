@@ -1,4 +1,4 @@
-const V = "suivi-1.7.6";
+const V = "suivi-1.7.7";
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(V).then(c => c.addAll(["./", "index.html", "manifest.json", "icon.svg"])));
   self.skipWaiting();
