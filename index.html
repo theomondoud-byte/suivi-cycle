@@ -46,6 +46,8 @@ dialog{max-width:480px;width:calc(100% - 24px);max-height:92vh;overflow:auto;bor
 .ow{fill:#b48ad9;opacity:.2}.eo{opacity:.5;stroke-dasharray:7 4}.pv{opacity:.65;stroke-dasharray:3 3}
 .leg{margin-top:10px}.leg summary{font-weight:600;cursor:pointer}.leg h3{font-size:13px;margin:12px 0 4px;color:var(--mute);text-transform:uppercase;letter-spacing:.04em}.lg li{display:flex;align-items:center;gap:10px;padding:3px 0;font-size:13px}.lg svg.sw{flex:0 0 28px;width:28px;height:16px;overflow:visible}
 .r2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.r2 label{min-width:0}section>details>summary{font-size:18px}
+.cw{position:relative}.cw .ico{position:absolute;top:2px;right:2px;z-index:2;width:30px;height:30px;padding:0;margin:0;display:flex;align-items:center;justify-content:center;border-radius:8px;opacity:.85}
+section:has(>details:only-child){border:0;padding:0 16px}section>details:only-child>summary{padding:13px 0}.leg{margin-top:0}.leg>summary{padding:10px 0}
 .small{font-size:13px;color:var(--mute);margin:8px 0 0}
 ul{list-style:none;margin:0;padding:0}
 li{display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
@@ -75,15 +77,15 @@ footer{padding:16px;font-size:13px;color:var(--mute)}
     <div id="f1"></div>
   </section>
 
-  <section><h2>Courbe du cycle</h2>
+  <section>
     <div class="nav"><button id="cprev" class="alt" aria-label="Cycle précédent">‹</button><span id="cyclbl"></span><button id="cnext" class="alt" aria-label="Cycle suivant">›</button></div>
-    <div class="nav2"><button id="bigopen" class="alt">Agrandir la courbe</button><button id="predopen" class="alt">Prédictions</button></div>
-    <div id="chart"></div>
+        <div class="cw"><button id="bigopen" class="alt ico" aria-label="Agrandir la courbe" title="Agrandir la courbe"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 2.5h4v4M13.5 2.5l-4.5 4.5M6.5 13.5h-4v-4M2.5 13.5L7 9"/></svg></button><div id="chart"></div></div>
     <label class="chk"><input id="interp" type="checkbox" checked>Afficher l’interprétation du décalage thermique</label>
     <label class="chk"><input id="corr" type="checkbox" checked>Corriger selon l’heure de mesure</label>
     <label class="chk"><input id="retro" type="checkbox" checked>Afficher en rose la fenêtre réellement fertile (rétrospective : ovulation −5 à +1 jour)</label>
     <details class="leg"><summary>Estimation et interprétation</summary><p id="stinfo" class="small"></p><p id="estnote" class="small"></p><p id="itxt" class="small"></p></details>
 <details class="leg"><summary>Légende</summary><h3>Zones colorées</h3><ul class="lg"><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect class="fw" x="1" y="1" width="26" height="14" rx="2"/></svg><span>Période fertile (méthode Cyclamen)</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect class="inf" x="1" y="1" width="26" height="14" rx="2"/></svg><span>Période infertile</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect class="fw est" x="1" y="1" width="26" height="14" rx="2"/></svg><span>Période fertile estimée (cycle en cours, d’après l’ovulation estimée)</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect class="rf" x="1" y="1" width="26" height="14" rx="2"/></svg><span>Fenêtre réellement fertile, rétrospective (ovulation −5 à +1 jour)</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect class="ow" x="1" y="1" width="26" height="14" rx="2"/></svg><span>Plage d’ovulation estimée</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><line class="ov" x1="14" x2="14" y1="0" y2="16"/></svg><span>Jour d’ovulation estimé : trait plein si la température l’a confirmé</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><line class="ov eo" x1="14" x2="14" y1="0" y2="16"/></svg><span>Jour d’ovulation estimé : trait pâle si non confirmé</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect x="1" y="1" width="26" height="14" rx="2" fill="var(--mid)"/></svg><span>Aujourd’hui</span></li></ul><h3>Ligne « Interp. »</h3><ul class="lg"><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect x="1" y="1" width="26" height="14" rx="3" fill="#f0a12b"/><text x="14" y="12" text-anchor="middle" font-size="10" font-weight="700" fill="#222">F</text></svg><span>Jour fertile</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect x="1" y="1" width="26" height="14" rx="3" fill="#fbefb0"/><text x="14" y="12" text-anchor="middle" font-size="10" font-weight="700" fill="#222">Is</text></svg><span>Soir infertile, après observation de la journée</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect x="1" y="1" width="26" height="14" rx="3" fill="#ddd"/><text x="14" y="12" text-anchor="middle" font-size="10" font-weight="700" fill="#222">?</text></svg><span>Fertilité inconnue</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect x="1" y="1" width="26" height="14" rx="3" fill="#f3d86b"/><text x="14" y="12" text-anchor="middle" font-size="10" font-weight="700" fill="#222">Ij</text></svg><span>Jour infertile (dès le 3ᵉ matin de température haute et stable)</span></li></ul><h3>Température</h3><ul class="lg"><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><line class="ln" x1="2" x2="26" y1="8" y2="8"/><circle class="dt" cx="14" cy="8" r="3.5"/></svg><span>Température (corrigée selon l’heure si l’option est cochée)</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><line class="nm" x1="1" x2="27" y1="8" y2="8" stroke-width="1.5"/></svg><span>NMB : niveau moyen bas (moyenne des 6 points bas)</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><line class="th" x1="1" x2="27" y1="8" y2="8" stroke-width="1.5"/></svg><span>Trait haut (NMB + 0,3 °C)</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><circle class="dt" cx="14" cy="8" r="3"/><circle class="ring2" cx="14" cy="8" r="6.5"/></svg><span>Point bas retenu pour le NMB</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><circle class="dt" cx="14" cy="8" r="3"/><circle class="ring" cx="14" cy="8" r="6.5"/></svg><span>Points hauts du décalage thermique (3 points)</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><line class="nm pv" x1="1" x2="27" y1="5" y2="5" stroke-width="1.5"/><line class="th pv" x1="1" x2="27" y1="11" y2="11" stroke-width="1.5"/></svg><span>Lignes pâles : NMB et trait haut provisoires (cycle en cours, décalage non confirmé)</span></li></ul><h3>Règles, glaire, sensation</h3><ul class="lg"><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><path d="M1 15V12 L8 12 L20 12 L27 12 V15Z" fill="#c2493d" fill-opacity=".85"/></svg><span>Règles faibles : courbe rouge basse</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><path d="M1 15V7 L8 7 L20 7 L27 7 V15Z" fill="#c2493d" fill-opacity=".85"/></svg><span>Règles moyennes : courbe rouge à mi-hauteur</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><path d="M1 15V1 L8 1 L20 1 L27 1 V15Z" fill="#c2493d" fill-opacity=".85"/></svg><span>Règles abondantes : courbe rouge haute</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><text x="14" y="12" text-anchor="middle" font-size="11" font-weight="700" fill="var(--mute)">S</text></svg><span>Sensation sèche</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><text x="14" y="12" text-anchor="middle" font-size="11" font-weight="700" fill="#2a7fc0">H</text></svg><span>Sensation humide</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><text x="14" y="12" text-anchor="middle" font-size="11" font-weight="700" fill="#2a7fc0">M</text></svg><span>Sensation mouillée</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><text x="14" y="12" text-anchor="middle" font-size="11" font-weight="700" fill="#2a7fc0">L</text></svg><span>Sensation lubrifiée</span></li></ul><h3>Divers</h3><ul class="lg"><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><text class="un" x="14" y="13" text-anchor="middle" font-size="14">♥</text></svg><span>Union</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><text x="14" y="13" text-anchor="middle" font-size="11" fill="var(--acc)">✎</text></svg><span>Note</span></li></ul><p class="small">Glissez le graphique pour voir tout le cycle ; appuyez longuement sur un jour pour voir et modifier ses valeurs.</p></details>
+    <details class="leg"><summary>Prédictions</summary><label>Modèle<select id="pmodel"><option value="perso">Moyenne de vos cycles</option><option value="ogino">Calendrier Ogino-Knaus</option><option value="std28">Cycle standard de 28 jours</option><option value="cler">Cyclamen (observation seule)</option></select></label><div id="pout"></div></details>
   </section>
 
   <section><details><summary>Jours du cycle affiché</summary>
@@ -134,12 +136,12 @@ footer{padding:16px;font-size:13px;color:var(--mute)}
     </details>
   </section>
 
-  <footer>Estimation indicative : cette application ne remplace pas une méthode contraceptive. Version 1.10.1</footer>
+  <footer>Estimation indicative : cette application ne remplace pas une méthode contraceptive. Version 1.11.0</footer>
 </main>
 
 <div id="bigwrap" hidden><div class="bn"><button id="bprev" class="alt" aria-label="Cycle précédent">‹</button><span id="bigcyc"></span><button id="bnext" class="alt" aria-label="Cycle suivant">›</button><button id="bigclose">Fermer</button></div><div id="bigchart"></div></div>
 <dialog id="dlg"><div class="nav"><button id="dprev" class="alt" aria-label="Jour précédent">‹</button><span id="dttl"></span><button id="dnext" class="alt" aria-label="Jour suivant">›</button></div><div id="f2"></div><button id="dclose" class="alt">Fermer</button></dialog>
-<dialog id="pdlg"><h2>Prédictions</h2><label>Modèle<select id="pmodel"><option value="perso">Moyenne de vos cycles</option><option value="ogino">Calendrier Ogino-Knaus</option><option value="std28">Cycle standard de 28 jours</option><option value="cler">Cyclamen (observation seule)</option></select></label><div id="pout"></div><button id="pclose" class="alt">Fermer</button></dialog>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 const $=s=>document.querySelector(s);
@@ -386,7 +388,7 @@ function render(){
     $("#cyclbl").textContent=A.e?"Cycle du "+fr(A.s)+" au "+fr(addDays(A.e,-1))+" ("+A.len+" jours)":"Cycle en cours, depuis le "+fr(A.s);
     lastA=A;lastN=N;drawChart(A,N);if(!$("#bigwrap").hidden)drawChart(A,N,true);explain(A);
   }
-  $("#cprev").disabled=back>=C.length-1;$("#cnext").disabled=back===0;$("#bprev").disabled=$("#cprev").disabled;$("#bnext").disabled=$("#cnext").disabled;$("#bigcyc").textContent=$("#cyclbl").textContent;stats(C);cinfo();
+  $("#cprev").disabled=back>=C.length-1;$("#cnext").disabled=back===0;$("#bprev").disabled=$("#cprev").disabled;$("#bnext").disabled=$("#cnext").disabled;$("#bigcyc").textContent=$("#cyclbl").textContent;stats(C);cinfo();if($("#pout").closest("details").open)$("#pout").innerHTML=predict($("#pmodel").value);
   const has=d=>data[d].t!=null||data[d].m||data[d].p||data[d].un||data[d].nt||data[d].mo||data[d].gp||data[d].w!=null;
   const keys=Object.keys(data).filter(d=>has(d)&&(!A||(d>=A.s&&(!A.e||d<A.e)))).sort().reverse().slice(0,A?100:14);
   $("#hist").innerHTML=keys.length?keys.map(d=>{
@@ -856,9 +858,8 @@ function predict(model){
   }
   return h+"</ul>";
 }
-$("#predopen").onclick=()=>{$("#pout").innerHTML=predict($("#pmodel").value);$("#pdlg").showModal();};
+$("#pout").closest("details").addEventListener("toggle",e=>{if(e.target.open)$("#pout").innerHTML=predict($("#pmodel").value);});
 $("#pmodel").onchange=()=>{$("#pout").innerHTML=predict($("#pmodel").value);};
-$("#pclose").onclick=()=>$("#pdlg").close();
 
 $("#cprev").onclick=()=>{back++;render();};
 $("#cnext").onclick=()=>{back--;render();};
