@@ -40,7 +40,7 @@ li button.row{display:flex;gap:12px;width:100%;margin:0;padding:8px 0;border:0;b
 .est{opacity:.55;stroke:var(--ink);stroke-dasharray:4 3}.th{stroke:var(--per);stroke-dasharray:6 3}.ring{fill:none;stroke:var(--acc);stroke-width:1.5}.un{fill:var(--per);font-size:11px}
 #chart,#bigchart{-webkit-touch-callout:none;user-select:none}#chart{overflow-x:auto;-webkit-overflow-scrolling:touch}svg.ch{width:auto;max-width:none}.lb{fill:var(--ink);font-size:8px}.nm{stroke:#8a6b1f;stroke-dasharray:6 3}.gr{stroke:var(--line);stroke-width:.5}.ob{fill:var(--ink)}.ring2{fill:none;stroke:var(--mute);stroke-dasharray:2 2}
 .nav2{display:flex;gap:8px;margin:0 0 12px}.nav2 button{margin:0}
-#bigwrap{position:fixed;inset:0;z-index:50;background:var(--bg);overflow:auto;padding:12px}#bigwrap[hidden]{display:none}#bigwrap>button{width:auto;padding:8px 20px;margin:0 0 8px}
+#bigwrap{position:fixed;inset:0;z-index:50;background:var(--bg);overflow:auto;padding:12px}#bigwrap[hidden]{display:none}#bigwrap .bn{display:flex;align-items:center;gap:8px;margin:0 0 8px}#bigwrap .bn span{flex:1;text-align:center;font-size:14px}#bigwrap .bn button{width:auto;padding:8px 18px;margin:0}
 dialog{max-width:480px;width:calc(100% - 24px);max-height:92vh;overflow:auto;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);padding:16px}dialog::backdrop{background:rgba(0,0,0,.55)}
 .gb{fill:#2a7fc0}.ga{stroke:none}.gl{fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.rf{fill:#f5a3c3;opacity:.55;stroke:none}.hit{fill:transparent;cursor:pointer}
 .ow{fill:#b48ad9;opacity:.2}.eo{opacity:.5;stroke-dasharray:7 4}.pv{opacity:.65;stroke-dasharray:3 3}
@@ -81,11 +81,10 @@ footer{padding:16px;font-size:13px;color:var(--mute)}
     <div class="nav2"><button id="bigopen" class="alt">Agrandir la courbe</button><button id="predopen" class="alt">Prédictions</button></div>
     <label class="chk"><input id="corr" type="checkbox" checked>Corriger selon l’heure de mesure</label>
     <div id="chart"></div>
-    <p id="estnote" class="small"></p>
     <label class="chk"><input id="interp" type="checkbox" checked>Afficher l’interprétation du décalage thermique</label>
     <label class="chk"><input id="retro" type="checkbox" checked>Afficher en rose la fenêtre réellement fertile (rétrospective : ovulation −5 à +1 jour)</label>
-    <p id="itxt" class="small"></p>
-<details class="leg" open><summary>Légende</summary><h3>Zones colorées</h3><ul class="lg"><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect class="fw" x="1" y="1" width="26" height="14" rx="2"/></svg><span>Période fertile (méthode Cyclamen)</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect class="inf" x="1" y="1" width="26" height="14" rx="2"/></svg><span>Période infertile</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect class="fw est" x="1" y="1" width="26" height="14" rx="2"/></svg><span>Période fertile estimée (cycle en cours, d’après l’ovulation estimée)</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect class="rf" x="1" y="1" width="26" height="14" rx="2"/></svg><span>Fenêtre réellement fertile, rétrospective (ovulation −5 à +1 jour)</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect class="ow" x="1" y="1" width="26" height="14" rx="2"/></svg><span>Plage d’ovulation estimée</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><line class="ov" x1="14" x2="14" y1="0" y2="16"/></svg><span>Jour d’ovulation estimé : trait plein si la température l’a confirmé</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><line class="ov eo" x1="14" x2="14" y1="0" y2="16"/></svg><span>Jour d’ovulation estimé : trait pâle si non confirmé</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect x="1" y="1" width="26" height="14" rx="2" fill="var(--mid)"/></svg><span>Aujourd’hui</span></li></ul><h3>Ligne « Interp. »</h3><ul class="lg"><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect x="1" y="1" width="26" height="14" rx="3" fill="#f0a12b"/><text x="14" y="12" text-anchor="middle" font-size="10" font-weight="700" fill="#222">F</text></svg><span>Jour fertile</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect x="1" y="1" width="26" height="14" rx="3" fill="#fbefb0"/><text x="14" y="12" text-anchor="middle" font-size="10" font-weight="700" fill="#222">Is</text></svg><span>Soir infertile, après observation de la journée</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect x="1" y="1" width="26" height="14" rx="3" fill="#ddd"/><text x="14" y="12" text-anchor="middle" font-size="10" font-weight="700" fill="#222">?</text></svg><span>Fertilité inconnue</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect x="1" y="1" width="26" height="14" rx="3" fill="#f3d86b"/><text x="14" y="12" text-anchor="middle" font-size="10" font-weight="700" fill="#222">Ij</text></svg><span>Jour infertile (dès le 3ᵉ matin de température haute et stable)</span></li></ul><h3>Température</h3><ul class="lg"><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><line class="ln" x1="2" x2="26" y1="8" y2="8"/><circle class="dt" cx="14" cy="8" r="3.5"/></svg><span>Température (corrigée selon l’heure si l’option est cochée)</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><line class="nm" x1="1" x2="27" y1="8" y2="8" stroke-width="1.5"/></svg><span>NMB : niveau moyen bas (moyenne des 6 points bas)</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><line class="th" x1="1" x2="27" y1="8" y2="8" stroke-width="1.5"/></svg><span>Trait haut (NMB + 0,3 °C)</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><circle class="dt" cx="14" cy="8" r="3"/><circle class="ring2" cx="14" cy="8" r="6.5"/></svg><span>Point bas retenu pour le NMB</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><circle class="dt" cx="14" cy="8" r="3"/><circle class="ring" cx="14" cy="8" r="6.5"/></svg><span>Points hauts du décalage thermique (3 points)</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><line class="nm pv" x1="1" x2="27" y1="5" y2="5" stroke-width="1.5"/><line class="th pv" x1="1" x2="27" y1="11" y2="11" stroke-width="1.5"/></svg><span>Lignes pâles : NMB et trait haut provisoires (cycle en cours, décalage non confirmé)</span></li></ul><h3>Règles, glaire, sensation</h3><ul class="lg"><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><circle class="pd" cx="14" cy="8" r="3.5"/></svg><span>Règles faibles (1 point rouge)</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><circle class="pd" cx="9" cy="8" r="3.5"/><circle class="pd" cx="19" cy="8" r="3.5"/></svg><span>Règles moyennes (2 points rouges)</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><circle class="pd" cx="5" cy="8" r="3.5"/><circle class="pd" cx="14" cy="8" r="3.5"/><circle class="pd" cx="23" cy="8" r="3.5"/></svg><span>Règles abondantes (3 points rouges)</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><path d="M1 15V13L8 13L14 9L20 4L27 2V15Z" fill="#14508f" fill-opacity=".85"/></svg><span>Glaire : courbe pleine de plus en plus haute (bas : rien vu ; milieu clair : épaisse ; haut et foncé : filante) ; interrompue les jours non notés</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><text x="14" y="12" text-anchor="middle" font-size="11" font-weight="700" fill="var(--mute)">S</text></svg><span>Sensation sèche</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><text x="14" y="12" text-anchor="middle" font-size="11" font-weight="700" fill="#2a7fc0">H</text></svg><span>Sensation humide</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><text x="14" y="12" text-anchor="middle" font-size="11" font-weight="700" fill="#2a7fc0">M</text></svg><span>Sensation mouillée</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><text x="14" y="12" text-anchor="middle" font-size="11" font-weight="700" fill="#2a7fc0">L</text></svg><span>Sensation lubrifiée</span></li></ul><h3>Divers</h3><ul class="lg"><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><text class="un" x="14" y="13" text-anchor="middle" font-weight="700" font-size="13">X</text></svg><span>Union</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><text x="14" y="13" text-anchor="middle" font-size="11" fill="var(--ink)">▲</text></svg><span>Jour sommet</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><text x="14" y="13" text-anchor="middle" font-size="11" fill="var(--acc)">✎</text></svg><span>Note</span></li></ul><p class="small">Glissez le graphique pour voir tout le cycle ; appuyez longuement sur un jour pour voir et modifier ses valeurs.</p></details>
+    <details class="leg" open><summary>Estimation et interprétation</summary><p id="estnote" class="small"></p><p id="itxt" class="small"></p></details>
+<details class="leg" open><summary>Légende</summary><h3>Zones colorées</h3><ul class="lg"><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect class="fw" x="1" y="1" width="26" height="14" rx="2"/></svg><span>Période fertile (méthode Cyclamen)</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect class="inf" x="1" y="1" width="26" height="14" rx="2"/></svg><span>Période infertile</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect class="fw est" x="1" y="1" width="26" height="14" rx="2"/></svg><span>Période fertile estimée (cycle en cours, d’après l’ovulation estimée)</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect class="rf" x="1" y="1" width="26" height="14" rx="2"/></svg><span>Fenêtre réellement fertile, rétrospective (ovulation −5 à +1 jour)</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect class="ow" x="1" y="1" width="26" height="14" rx="2"/></svg><span>Plage d’ovulation estimée</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><line class="ov" x1="14" x2="14" y1="0" y2="16"/></svg><span>Jour d’ovulation estimé : trait plein si la température l’a confirmé</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><line class="ov eo" x1="14" x2="14" y1="0" y2="16"/></svg><span>Jour d’ovulation estimé : trait pâle si non confirmé</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect x="1" y="1" width="26" height="14" rx="2" fill="var(--mid)"/></svg><span>Aujourd’hui</span></li></ul><h3>Ligne « Interp. »</h3><ul class="lg"><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect x="1" y="1" width="26" height="14" rx="3" fill="#f0a12b"/><text x="14" y="12" text-anchor="middle" font-size="10" font-weight="700" fill="#222">F</text></svg><span>Jour fertile</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect x="1" y="1" width="26" height="14" rx="3" fill="#fbefb0"/><text x="14" y="12" text-anchor="middle" font-size="10" font-weight="700" fill="#222">Is</text></svg><span>Soir infertile, après observation de la journée</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect x="1" y="1" width="26" height="14" rx="3" fill="#ddd"/><text x="14" y="12" text-anchor="middle" font-size="10" font-weight="700" fill="#222">?</text></svg><span>Fertilité inconnue</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect x="1" y="1" width="26" height="14" rx="3" fill="#f3d86b"/><text x="14" y="12" text-anchor="middle" font-size="10" font-weight="700" fill="#222">Ij</text></svg><span>Jour infertile (dès le 3ᵉ matin de température haute et stable)</span></li></ul><h3>Température</h3><ul class="lg"><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><line class="ln" x1="2" x2="26" y1="8" y2="8"/><circle class="dt" cx="14" cy="8" r="3.5"/></svg><span>Température (corrigée selon l’heure si l’option est cochée)</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><line class="nm" x1="1" x2="27" y1="8" y2="8" stroke-width="1.5"/></svg><span>NMB : niveau moyen bas (moyenne des 6 points bas)</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><line class="th" x1="1" x2="27" y1="8" y2="8" stroke-width="1.5"/></svg><span>Trait haut (NMB + 0,3 °C)</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><circle class="dt" cx="14" cy="8" r="3"/><circle class="ring2" cx="14" cy="8" r="6.5"/></svg><span>Point bas retenu pour le NMB</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><circle class="dt" cx="14" cy="8" r="3"/><circle class="ring" cx="14" cy="8" r="6.5"/></svg><span>Points hauts du décalage thermique (3 points)</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><line class="nm pv" x1="1" x2="27" y1="5" y2="5" stroke-width="1.5"/><line class="th pv" x1="1" x2="27" y1="11" y2="11" stroke-width="1.5"/></svg><span>Lignes pâles : NMB et trait haut provisoires (cycle en cours, décalage non confirmé)</span></li></ul><h3>Règles, glaire, sensation</h3><ul class="lg"><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><path d="M1 15V12 L8 12 L20 12 L27 12 V15Z" fill="#c2493d" fill-opacity=".85"/></svg><span>Règles faibles : courbe rouge basse</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><path d="M1 15V7 L8 7 L20 7 L27 7 V15Z" fill="#c2493d" fill-opacity=".85"/></svg><span>Règles moyennes : courbe rouge à mi-hauteur</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><path d="M1 15V1 L8 1 L20 1 L27 1 V15Z" fill="#c2493d" fill-opacity=".85"/></svg><span>Règles abondantes : courbe rouge haute</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><text x="14" y="12" text-anchor="middle" font-size="11" font-weight="700" fill="var(--mute)">S</text></svg><span>Sensation sèche</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><text x="14" y="12" text-anchor="middle" font-size="11" font-weight="700" fill="#2a7fc0">H</text></svg><span>Sensation humide</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><text x="14" y="12" text-anchor="middle" font-size="11" font-weight="700" fill="#2a7fc0">M</text></svg><span>Sensation mouillée</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><text x="14" y="12" text-anchor="middle" font-size="11" font-weight="700" fill="#2a7fc0">L</text></svg><span>Sensation lubrifiée</span></li></ul><h3>Divers</h3><ul class="lg"><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><text class="un" x="14" y="13" text-anchor="middle" font-size="14">♥</text></svg><span>Union</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><text x="14" y="13" text-anchor="middle" font-size="11" fill="var(--ink)">▲</text></svg><span>Jour sommet</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><text x="14" y="13" text-anchor="middle" font-size="11" fill="var(--acc)">✎</text></svg><span>Note</span></li></ul><p class="small">Glissez le graphique pour voir tout le cycle ; appuyez longuement sur un jour pour voir et modifier ses valeurs.</p></details>
   </section>
 
   <section>
@@ -137,10 +136,10 @@ footer{padding:16px;font-size:13px;color:var(--mute)}
     </details>
   </section>
 
-  <footer>Estimation indicative : cette application ne remplace pas une méthode contraceptive. Version 1.8.1</footer>
+  <footer>Estimation indicative : cette application ne remplace pas une méthode contraceptive. Version 1.9.0</footer>
 </main>
 
-<div id="bigwrap" hidden><button id="bigclose">Fermer</button><div id="bigchart"></div></div>
+<div id="bigwrap" hidden><div class="bn"><button id="bprev" class="alt" aria-label="Cycle précédent">‹</button><span id="bigcyc"></span><button id="bnext" class="alt" aria-label="Cycle suivant">›</button><button id="bigclose">Fermer</button></div><div id="bigchart"></div></div>
 <dialog id="dlg"><div class="nav"><button id="dprev" class="alt" aria-label="Jour précédent">‹</button><span id="dttl"></span><button id="dnext" class="alt" aria-label="Jour suivant">›</button></div><div id="f2"></div><button id="dclose" class="alt">Fermer</button></dialog>
 <dialog id="pdlg"><h2>Prédictions</h2><label>Modèle<select id="pmodel"><option value="perso">Moyenne de vos cycles</option><option value="ogino">Calendrier Ogino-Knaus</option><option value="std28">Cycle standard de 28 jours</option><option value="cler">Cyclamen (observation seule)</option></select></label><div id="pout"></div><button id="pclose" class="alt">Fermer</button></dialog>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
@@ -390,7 +389,7 @@ function render(){
     $("#cyclbl").textContent=A.e?"Cycle du "+fr(A.s)+" au "+fr(addDays(A.e,-1))+" ("+A.len+" jours)":"Cycle en cours, depuis le "+fr(A.s);
     lastA=A;lastN=N;drawChart(A,N);if(!$("#bigwrap").hidden)drawChart(A,N,true);explain(A);
   }
-  $("#cprev").disabled=back>=C.length-1;$("#cnext").disabled=back===0;stats(C);cinfo();
+  $("#cprev").disabled=back>=C.length-1;$("#cnext").disabled=back===0;$("#bprev").disabled=$("#cprev").disabled;$("#bnext").disabled=$("#cnext").disabled;$("#bigcyc").textContent=$("#cyclbl").textContent;stats(C);cinfo();
   const has=d=>data[d].t!=null||data[d].m||data[d].p||data[d].un||data[d].nt||data[d].mo||data[d].js||data[d].gp||data[d].w!=null;
   const keys=Object.keys(data).filter(d=>has(d)&&(!A||(d>=A.s&&(!A.e||d<A.e)))).sort().reverse().slice(0,A?100:14);
   $("#hist").innerHTML=keys.length?keys.map(d=>{
@@ -401,7 +400,7 @@ function render(){
 
 function drawChart(A,N,big){
   const T=A.T,cs=A.s,box=big?$("#bigchart"):$("#chart");
-  const L=42,R=14,Y0=64,aw=big?innerWidth-24:0,ah=big?innerHeight-70:0,sc=big?Math.min(2,Math.max(1,aw/900)):1,CW=big?Math.max(10,(aw/sc-L-R)/N):26,PH=big?Math.max(90,Math.min(ah/sc-Y0-124,0.6*aw/sc)):220,Yb=Y0+PH,H=Yb+124,W=L+N*CW+R;
+  const L=42,R=14,Y0=64,aw=big?innerWidth-24:0,ah=big?innerHeight-70:0,sc=big?Math.min(2,Math.max(1,aw/900)):1,CW=big?Math.max(10,(aw/sc-L-R)/N):26,PH=big?Math.max(90,Math.min(ah/sc-Y0-124,0.6*aw/sc)):220,Yb=Y0+PH,H=Yb+108,W=L+N*CW+R;
   const tv=T.length?T.map(x=>x.t):[36.3,36.9];let lo=Math.min(...tv),hi=Math.max(...tv);
   if(A.sh){hi=Math.max(hi,A.sh.base+A.sh.d);lo=Math.min(lo,A.sh.base);}
   if(A.prov&&$("#interp").checked){hi=Math.max(hi,A.prov.thr);lo=Math.min(lo,A.prov.base);}
@@ -438,7 +437,8 @@ function drawChart(A,N,big){
   s+="<polyline class='ln' points='"+T.map(p=>xc(p.n)+","+y(p.t)).join(" ")+"'/>";
   s+=T.map(p=>"<circle class='dt' cx='"+xc(p.n)+"' cy='"+y(p.t)+"' r='3'/><text class='lb' x='"+xc(p.n)+"' y='"+(y(p.t)-9)+"' text-anchor='middle'>"+num(p.t)+"</text>").join("");
   const lab=(t,yy)=>"<text class='tx' x='2' y='"+yy+"' font-size='8'>"+t+"</text>";
-  s+=lab("Interp.",Y0-22)+lab("Unions",Y0-6)+lab("Cycle",Yb+14)+lab("Règles",Yb+38)+lab("Glaire",Yb+72)+lab("Sensation",Yb+88)+lab("Notes",Yb+118);
+  s+=lab("Interp.",Y0-22)+lab("Unions",Y0-6)+lab("Cycle",Yb+14)+lab("Sensation",Yb+72)+lab("Notes",Yb+102);
+  s+="<text class='tx' x='2' y='"+(Yb+41)+"' font-size='8' fill='#c2493d'>Règles</text><text class='tx' x='2' y='"+(Yb+54)+"' font-size='8' fill='#2a7fc0'>Glaire</text>";
   const COL={F:["#f0a12b","#222"],Ij:["#f3d86b","#222"],Is:["#fbefb0","#222"],"?":["#ddd","#222"]};
   const SC={seche:["S","#d9d9d9","#222"],"crémeuse":["H","#9ad1e6","#0b2a3a"],filant:["M","#2a7fc0","#fff"],lubrifie:["L","#8fd0a8","#0b2a3a"]};
   for(let k=1;k<=N;k++){
@@ -446,36 +446,38 @@ function drawChart(A,N,big){
     if(k===1||d.slice(8)==="01")s+="<text class='tx' x='"+(xl(k)+2)+"' y='10'>"+MO[+d.slice(5,7)-1]+"</text>";
     s+="<text class='lb' x='"+X+"' y='25' text-anchor='middle' font-weight='700' font-size='10'>"+(+d.slice(8))+"</text>";
     if(c)s+="<rect x='"+(xl(k)+1)+"' y='30' width='"+(CW-2)+"' height='16' fill='"+COL[c][0]+"'/><text x='"+X+"' y='42' text-anchor='middle' font-size='10' font-weight='700' fill='"+COL[c][1]+"'>"+c+"</text>";
-    if(e.un)s+="<text class='un' x='"+X+"' y='"+(Y0-6)+"' text-anchor='middle' font-weight='700' font-size='13'>X</text>";
+    if(e.un)s+="<text class='un' x='"+X+"' y='"+(Y0-6)+"' text-anchor='middle' font-size='14'>♥</text>";
     s+="<text class='lb' x='"+X+"' y='"+(Yb+14)+"' text-anchor='middle' font-weight='700' font-size='10'>"+k+"</text>";
-    const p=e.p?Math.max(1,(e.p===true?3:+e.p)-1):0;
-    for(let j=0;j<p;j++)s+="<circle class='pd' cx='"+X+"' cy='"+(Yb+44-j*7)+"' r='3'/>";
     const sl={seche:"S","crémeuse":"H",filant:"M",lubrifie:"L"}[e.m];
-    if(sl)s+="<text x='"+X+"' y='"+(Yb+92)+"' text-anchor='middle' font-size='12' font-weight='700' fill='"+(e.m==="seche"?"var(--mute)":"#2a7fc0")+"'>"+sl+"</text>";
-    if(e.js)s+="<text x='"+X+"' y='"+(Yb+106)+"' text-anchor='middle' font-size='11' fill='var(--ink)'>▲</text>";
-    if(e.nt)s+="<text x='"+X+"' y='"+(Yb+119)+"' text-anchor='middle' font-size='11' fill='var(--acc)'>✎</text>";
+    if(sl)s+="<text x='"+X+"' y='"+(Yb+76)+"' text-anchor='middle' font-size='12' font-weight='700' fill='"+(e.m==="seche"?"var(--mute)":"#2a7fc0")+"'>"+sl+"</text>";
+    if(e.js)s+="<text x='"+X+"' y='"+(Yb+90)+"' text-anchor='middle' font-size='11' fill='var(--ink)'>▲</text>";
+    if(e.nt)s+="<text x='"+X+"' y='"+(Yb+103)+"' text-anchor='middle' font-size='11' fill='var(--acc)'>✎</text>";
   }
-  const gbase=Yb+76,GH={rien:3,epaisse:8,elastique:18},gid="gg"+(big?"b":"n");
-  s+="<defs><linearGradient id='"+gid+"' gradientUnits='userSpaceOnUse' x1='0' y1='"+(gbase-18)+"' x2='0' y2='"+gbase+"'><stop offset='0' stop-color='#0f3f78' stop-opacity='.95'/><stop offset='.42' stop-color='#14508f' stop-opacity='.9'/><stop offset='.58' stop-color='#6fb1e0' stop-opacity='.4'/><stop offset='1' stop-color='#6fb1e0' stop-opacity='.3'/></linearGradient><linearGradient id='"+gid+"s' gradientUnits='userSpaceOnUse' x1='0' y1='"+(gbase-18)+"' x2='0' y2='"+gbase+"'><stop offset='0' stop-color='#0f3f78'/><stop offset='.5' stop-color='#1f6aae'/><stop offset='1' stop-color='#5aa6dc'/></linearGradient></defs>";
-  let run=[];
+  const gbase=Yb+56,GH={rien:3,epaisse:8,elastique:18},PL={2:6,3:12,4:18};
   const ytop=gbase-18,cl=v=>Math.min(gbase,Math.max(ytop,v)),f1=v=>Math.round(v*10)/10;
-  const flush=()=>{
-    if(!run.length)return;
-    const pad=CW*0.45,pts=[{x:run[0].x-pad,y:gbase},...run,{x:run[run.length-1].x+pad,y:gbase}];
-    let d="M"+f1(pts[0].x)+","+f1(pts[0].y);
-    for(let i=0;i<pts.length-1;i++){
-      const a=pts[i-1]||pts[i],b=pts[i],c=pts[i+1],e=pts[i+2]||c;
-      d+=" C"+f1(b.x+(c.x-a.x)/6)+","+f1(cl(b.y+(c.y-a.y)/6))+" "+f1(c.x-(e.x-b.x)/6)+","+f1(cl(c.y-(e.y-b.y)/6))+" "+f1(c.x)+","+f1(c.y);
-    }
-    s+="<path class='ga' fill='url(#"+gid+")' d='"+d+" L"+f1(pts[pts.length-1].x)+","+gbase+" L"+f1(pts[0].x)+","+gbase+" Z'/>";
-    s+="<path class='gl' stroke='url(#"+gid+"s)' d='"+d+"'/>";
-    run=[];
+  const PAL={g:["#0f3f78","#14508f","#6fb1e0","#1f6aae","#5aa6dc"],r:["#8e1f1a","#b83a30","#ef9a90","#c2493d","#e57c70"]};
+  const defs=(id,c)=>"<linearGradient id='"+id+"' gradientUnits='userSpaceOnUse' x1='0' y1='"+ytop+"' x2='0' y2='"+gbase+"'><stop offset='0' stop-color='"+c[0]+"' stop-opacity='.95'/><stop offset='.42' stop-color='"+c[1]+"' stop-opacity='.9'/><stop offset='.58' stop-color='"+c[2]+"' stop-opacity='.4'/><stop offset='1' stop-color='"+c[2]+"' stop-opacity='.3'/></linearGradient><linearGradient id='"+id+"s' gradientUnits='userSpaceOnUse' x1='0' y1='"+ytop+"' x2='0' y2='"+gbase+"'><stop offset='0' stop-color='"+c[0]+"'/><stop offset='.5' stop-color='"+c[3]+"'/><stop offset='1' stop-color='"+c[4]+"'/></linearGradient>";
+  const gidG="gg"+(big?"b":"n"),gidR="gr"+(big?"b":"n");
+  s+="<defs>"+defs(gidG,PAL.g)+defs(gidR,PAL.r)+"</defs>";
+  const curve=(hf,gid)=>{
+    let run=[];
+    const flush=()=>{
+      if(!run.length)return;
+      const pad=CW*0.45,pts=[{x:run[0].x-pad,y:gbase},...run,{x:run[run.length-1].x+pad,y:gbase}];
+      let d="M"+f1(pts[0].x)+","+f1(pts[0].y);
+      for(let i=0;i<pts.length-1;i++){
+        const a=pts[i-1]||pts[i],b=pts[i],c=pts[i+1],e=pts[i+2]||c;
+        d+=" C"+f1(b.x+(c.x-a.x)/6)+","+f1(cl(b.y+(c.y-a.y)/6))+" "+f1(c.x-(e.x-b.x)/6)+","+f1(cl(c.y-(e.y-b.y)/6))+" "+f1(c.x)+","+f1(c.y);
+      }
+      s+="<path class='ga' fill='url(#"+gid+")' d='"+d+" L"+f1(pts[pts.length-1].x)+","+gbase+" L"+f1(pts[0].x)+","+gbase+" Z'/>";
+      s+="<path class='gl' stroke='url(#"+gid+"s)' d='"+d+"'/>";
+      run=[];
+    };
+    for(let k=1;k<=N;k++){const g=hf(data[addDays(cs,k-1)]||{});if(g)run.push({x:xc(k),y:gbase-g});else flush();}
+    flush();
   };
-  for(let k=1;k<=N;k++){
-    const g=GH[(data[addDays(cs,k-1)]||{}).mo];
-    if(g)run.push({x:xc(k),y:gbase-g});else flush();
-  }
-  flush();
+  curve(e=>GH[e.mo],gidG);
+  curve(e=>e.p?PL[e.p===true?3:+e.p]:0,gidR);
   for(let k=1;k<=N;k++){const dd=addDays(cs,k-1);if(dd<=today())s+="<rect class='hit' data-d='"+dd+"' x='"+xl(k)+"' y='0' width='"+CW+"' height='"+H+"'/>";}
   box.innerHTML=s+"</svg>";
   box.scrollLeft=A.e?0:Math.max(0,xc(Math.min(Math.max(kt,1),N))*sc-box.clientWidth/2);
@@ -835,7 +837,7 @@ function longPress(box){
 longPress($("#chart"));longPress($("#bigchart"));
 $("#bigopen").onclick=()=>{$("#bigwrap").hidden=false;if(lastA)drawChart(lastA,lastN,true);};
 $("#bigclose").onclick=()=>{$("#bigwrap").hidden=true;};
-addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("#dlg").open)$("#bigwrap").hidden=true;});
+addEventListener("keydown",e=>{if($("#bigwrap").hidden||$("#dlg").open)return;if(e.key==="Escape")$("#bigwrap").hidden=true;else if(e.key==="ArrowLeft")$("#bprev").click();else if(e.key==="ArrowRight")$("#bnext").click();});
 addEventListener("resize",()=>{if(!$("#bigwrap").hidden&&lastA)drawChart(lastA,lastN,true);});
 
 /* Prédictions : indicatives, d’après les cycles passés (Cyclamen lui-même n’en fait pas) */
@@ -866,6 +868,7 @@ $("#pclose").onclick=()=>$("#pdlg").close();
 
 $("#cprev").onclick=()=>{back++;render();};
 $("#cnext").onclick=()=>{back--;render();};
+$("#bprev").onclick=()=>{if(!$("#cprev").disabled)$("#cprev").click();};$("#bnext").onclick=()=>{if(!$("#cnext").disabled)$("#cnext").click();};
 document.addEventListener("visibilitychange",()=>{
   if(!document.hidden&&!$("#app").hidden&&(data[today()]||{}).t==null)$("#hour").value=nowHM();
 });
