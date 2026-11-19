@@ -42,7 +42,7 @@ li button.row{display:flex;gap:12px;width:100%;margin:0;padding:8px 0;border:0;b
 .nav2{display:flex;gap:8px;margin:0 0 12px}.nav2 button{margin:0}
 #bigwrap{position:fixed;inset:0;z-index:50;background:var(--bg);overflow:auto;padding:12px}#bigwrap[hidden]{display:none}#bigwrap>button{width:auto;padding:8px 20px;margin:0 0 8px}
 dialog{max-width:480px;width:calc(100% - 24px);max-height:92vh;overflow:auto;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);padding:16px}dialog::backdrop{background:rgba(0,0,0,.55)}
-.gb{fill:#2a7fc0}.rf{fill:#f5a3c3;opacity:.55;stroke:none}.hit{fill:transparent;cursor:pointer}
+.gb{fill:#2a7fc0}.gs{fill:none;stroke:#2a7fc0;stroke-width:1.8}.gw{fill:none;stroke:#2a7fc0;stroke-width:2;stroke-linecap:round}.rf{fill:#f5a3c3;opacity:.55;stroke:none}.hit{fill:transparent;cursor:pointer}
 .small{font-size:13px;color:var(--mute);margin:8px 0 0}
 ul{list-style:none;margin:0;padding:0}
 li{display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
@@ -83,7 +83,7 @@ footer{padding:16px;font-size:13px;color:var(--mute)}
     <label class="chk"><input id="interp" type="checkbox" checked>Afficher l’interprétation du décalage thermique</label>
     <label class="chk"><input id="retro" type="checkbox" checked>Afficher en rose la fenêtre réellement fertile (rétrospective : ovulation −5 à +1 jour)</label>
     <p id="itxt" class="small"></p>
-    <p class="small">Ligne « Interp. » : F jour fertile, Is soir infertile après observation de la journée, ? fertilité inconnue, Ij jour infertile (dès le 3ᵉ matin de température haute et stable). Tirets : NMB (niveau moyen bas) et trait haut (NMB + 0,3). Points entourés : les 3 points hauts. Points rouges : règles (1 faibles, 2 moyennes, 3 abondantes). Barres : glaire (rien, épaisse, élastique). Points bleus : sensation (1 humide, 2 mouillée, 3 lubrifiée) ; tiret gris : sèche. Glissez le graphique pour voir tout le cycle ; appuyez longuement sur un jour pour voir et modifier ses valeurs.</p>
+    <p class="small">Ligne « Interp. » : F jour fertile, Is soir infertile après observation de la journée, ? fertilité inconnue, Ij jour infertile (dès le 3ᵉ matin de température haute et stable). Tirets : NMB (niveau moyen bas) et trait haut (NMB + 0,3). Points entourés : les 3 points hauts. Points rouges : règles (1 faibles, 2 moyennes, 3 abondantes). Symboles bleus : glaire (cercle vide : rien vu, disque : épaisse, vague : filante). Lettres : sensation (S sèche, H humide, M mouillée, L lubrifiée). Glissez le graphique pour voir tout le cycle ; appuyez longuement sur un jour pour voir et modifier ses valeurs.</p>
   </section>
 
   <section>
@@ -135,7 +135,7 @@ footer{padding:16px;font-size:13px;color:var(--mute)}
     </details>
   </section>
 
-  <footer>Estimation indicative : cette application ne remplace pas une méthode contraceptive. Version 1.7.5</footer>
+  <footer>Estimation indicative : cette application ne remplace pas une méthode contraceptive. Version 1.7.6</footer>
 </main>
 
 <div id="bigwrap" hidden><button id="bigclose">Fermer</button><div id="bigchart"></div></div>
@@ -311,7 +311,7 @@ function render(){
   const keys=Object.keys(data).filter(d=>has(d)&&(!A||(d>=A.s&&(!A.e||d<A.e)))).sort().reverse().slice(0,A?100:14);
   $("#hist").innerHTML=keys.length?keys.map(d=>{
     const e=data[d];
-    return "<li><button class='row' data-d='"+d+"'><b>"+fr(d)+"</b><span>"+(e.t!=null?num(e.t)+" °C"+(e.h?" à "+e.h:"")+(adj(e)!==e.t?" (corrigée "+num(adj(e))+")":""):"pas de température")+"</span>"+(e.m||e.mo?"<span>glaire "+(({seche:"S",crémeuse:"H",filant:"M",lubrifie:"L"})[e.m]||"")+(e.mo?" "+({rien:"rien vu",epaisse:"épaisse",elastique:"élastique"})[e.mo]:"")+"</span>":"")+(e.js?"<span>▲ jour sommet</span>":"")+(e.p?"<span class=r>règles "+["","faibles","faibles","moyennes","abondantes"][e.p===true?3:e.p]+"</span>":"")+(e.un?"<span>union</span>":"")+(e.x?"<span>température ignorée</span>":"")+(e.nt?"<span>"+e.nt.replace(/&/g,"&amp;").replace(/</g,"&lt;")+"</span>":"")+"</button></li>";
+    return "<li><button class='row' data-d='"+d+"'><b>"+fr(d)+"</b><span>"+(e.t!=null?num(e.t)+" °C"+(e.h?" à "+e.h:"")+(adj(e)!==e.t?" (corrigée "+num(adj(e))+")":""):"pas de température")+"</span>"+(e.m||e.mo?"<span>glaire "+(({seche:"S",crémeuse:"H",filant:"M",lubrifie:"L"})[e.m]||"")+(e.mo?" "+({rien:"rien vu",epaisse:"épaisse",elastique:"filante"})[e.mo]:"")+"</span>":"")+(e.js?"<span>▲ jour sommet</span>":"")+(e.p?"<span class=r>règles "+["","faibles","faibles","moyennes","abondantes"][e.p===true?3:e.p]+"</span>":"")+(e.un?"<span>union</span>":"")+(e.x?"<span>température ignorée</span>":"")+(e.nt?"<span>"+e.nt.replace(/&/g,"&amp;").replace(/</g,"&lt;")+"</span>":"")+"</button></li>";
   }).join(""):"<li><span>Aucune saisie pour l’instant.</span></li>";
 }
 
@@ -355,11 +355,12 @@ function drawChart(A,N,big){
     s+="<text class='lb' x='"+X+"' y='"+(Yb+14)+"' text-anchor='middle' font-weight='700' font-size='10'>"+k+"</text>";
     const p=e.p?Math.max(1,(e.p===true?3:+e.p)-1):0;
     for(let j=0;j<p;j++)s+="<circle class='pd' cx='"+X+"' cy='"+(Yb+44-j*7)+"' r='3'/>";
-    const hb={rien:3,epaisse:9,elastique:17}[e.mo];
-    if(hb)s+="<rect class='ob' x='"+(X-5)+"' y='"+(Yb+76-hb)+"' width='10' height='"+hb+"'/>";
-    const gn={"crémeuse":1,filant:2,lubrifie:3}[e.m];
-    if(gn)for(let j=0;j<gn;j++)s+="<circle class='gb' cx='"+X+"' cy='"+(Yb+92-j*7)+"' r='3'/>";
-    else if(e.m==="seche")s+="<rect x='"+(X-5)+"' y='"+(Yb+89)+"' width='10' height='3' fill='var(--mute)'/>";
+    const gy=Yb+66;
+    if(e.mo==="rien")s+="<circle class='gs' cx='"+X+"' cy='"+gy+"' r='4'/>";
+    else if(e.mo==="epaisse")s+="<circle class='gb' cx='"+X+"' cy='"+gy+"' r='5'/>";
+    else if(e.mo==="elastique")s+="<path class='gw' d='M"+(X-8)+","+gy+" q4,-8 8,0 t8,0'/>";
+    const sl={seche:"S","crémeuse":"H",filant:"M",lubrifie:"L"}[e.m];
+    if(sl)s+="<text x='"+X+"' y='"+(Yb+92)+"' text-anchor='middle' font-size='12' font-weight='700' fill='"+(e.m==="seche"?"var(--mute)":"#2a7fc0")+"'>"+sl+"</text>";
     if(e.js)s+="<text x='"+X+"' y='"+(Yb+106)+"' text-anchor='middle' font-size='11' fill='var(--ink)'>▲</text>";
     if(e.nt)s+="<text x='"+X+"' y='"+(Yb+119)+"' text-anchor='middle' font-size='11' fill='var(--acc)'>✎</text>";
   }
@@ -373,7 +374,7 @@ const FORM=p=>`<label>Température au réveil (°C)<input id="${p}temp" inputmod
 <label>Heure de la mesure<input id="${p}hour" type="time"></label>
 <label class="chk"><input id="${p}xcl" type="checkbox">Température perturbée (à ignorer)</label>
 <label>Sensation<select id="${p}mucus"><option value="">Non notée</option><option value="seche">Sèche (S)</option><option value="crémeuse">Humide (H)</option><option value="filant">Mouillée (M)</option><option value="lubrifie">Lubrifiée (L)</option></select></label>
-<label>Glaire<select id="${p}obs"><option value="">Non notée</option><option value="rien">Rien vu</option><option value="epaisse">Épaisse</option><option value="elastique">Élastique</option></select></label>
+<label>Glaire<select id="${p}obs"><option value="">Non notée</option><option value="rien">Rien vu</option><option value="epaisse">Épaisse</option><option value="elastique">Filante</option></select></label>
 <label>Règles<select id="${p}period"><option value="0">Aucune</option><option value="2">Faibles</option><option value="3">Moyennes</option><option value="4">Abondantes</option></select></label>
 <label class="chk"><input id="${p}union" type="checkbox">Union</label>
 <label class="chk"><input id="${p}js" type="checkbox">Jour sommet (dernier jour de glaire mouillée, noté après coup)</label>
