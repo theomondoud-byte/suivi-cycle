@@ -42,7 +42,7 @@ li button.row{display:flex;gap:12px;width:100%;margin:0;padding:8px 0;border:0;b
 .nav2{display:flex;gap:8px;margin:0 0 12px}.nav2 button{margin:0}
 #bigwrap{position:fixed;inset:0;z-index:50;background:var(--bg);overflow:auto;padding:12px}#bigwrap[hidden]{display:none}#bigwrap>button{width:auto;padding:8px 20px;margin:0 0 8px}
 dialog{max-width:480px;width:calc(100% - 24px);max-height:92vh;overflow:auto;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);padding:16px}dialog::backdrop{background:rgba(0,0,0,.55)}
-.gb{fill:#2a7fc0}.ga{fill:#2a7fc0;fill-opacity:.35;stroke:#2a7fc0;stroke-width:1.8;stroke-linejoin:round}.rf{fill:#f5a3c3;opacity:.55;stroke:none}.hit{fill:transparent;cursor:pointer}
+.gb{fill:#2a7fc0}.ga{stroke:#2a7fc0;stroke-width:1.8;stroke-linejoin:round}.rf{fill:#f5a3c3;opacity:.55;stroke:none}.hit{fill:transparent;cursor:pointer}
 .small{font-size:13px;color:var(--mute);margin:8px 0 0}
 ul{list-style:none;margin:0;padding:0}
 li{display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
@@ -83,7 +83,7 @@ footer{padding:16px;font-size:13px;color:var(--mute)}
     <label class="chk"><input id="interp" type="checkbox" checked>Afficher l’interprétation du décalage thermique</label>
     <label class="chk"><input id="retro" type="checkbox" checked>Afficher en rose la fenêtre réellement fertile (rétrospective : ovulation −5 à +1 jour)</label>
     <p id="itxt" class="small"></p>
-    <p class="small">Ligne « Interp. » : F jour fertile, Is soir infertile après observation de la journée, ? fertilité inconnue, Ij jour infertile (dès le 3ᵉ matin de température haute et stable). Tirets : NMB (niveau moyen bas) et trait haut (NMB + 0,3). Points entourés : les 3 points hauts. Points rouges : règles (1 faibles, 2 moyennes, 3 abondantes). Courbe bleue pleine : glaire, de plus en plus haute (bas : rien vu, milieu : épaisse, haut : filante) ; elle s’interrompt les jours non notés. Lettres : sensation (S sèche, H humide, M mouillée, L lubrifiée). Glissez le graphique pour voir tout le cycle ; appuyez longuement sur un jour pour voir et modifier ses valeurs.</p>
+    <p class="small">Ligne « Interp. » : F jour fertile, Is soir infertile après observation de la journée, ? fertilité inconnue, Ij jour infertile (dès le 3ᵉ matin de température haute et stable). Tirets : NMB (niveau moyen bas) et trait haut (NMB + 0,3). Points entourés : les 3 points hauts. Points rouges : règles (1 faibles, 2 moyennes, 3 abondantes). Courbe bleue pleine : glaire, de plus en plus haute (bas : rien vu, milieu clair : épaisse, haut et bleu foncé : filante) ; elle s’interrompt les jours non notés. Lettres : sensation (S sèche, H humide, M mouillée, L lubrifiée). Glissez le graphique pour voir tout le cycle ; appuyez longuement sur un jour pour voir et modifier ses valeurs.</p>
   </section>
 
   <section>
@@ -135,7 +135,7 @@ footer{padding:16px;font-size:13px;color:var(--mute)}
     </details>
   </section>
 
-  <footer>Estimation indicative : cette application ne remplace pas une méthode contraceptive. Version 1.7.7</footer>
+  <footer>Estimation indicative : cette application ne remplace pas une méthode contraceptive. Version 1.7.8</footer>
 </main>
 
 <div id="bigwrap" hidden><button id="bigclose">Fermer</button><div id="bigchart"></div></div>
@@ -360,7 +360,8 @@ function drawChart(A,N,big){
     if(e.js)s+="<text x='"+X+"' y='"+(Yb+106)+"' text-anchor='middle' font-size='11' fill='var(--ink)'>▲</text>";
     if(e.nt)s+="<text x='"+X+"' y='"+(Yb+119)+"' text-anchor='middle' font-size='11' fill='var(--acc)'>✎</text>";
   }
-  const gbase=Yb+76,GH={rien:4,epaisse:10,elastique:17};
+  const gbase=Yb+76,GH={rien:3,epaisse:8,elastique:18},gid="gg"+(big?"b":"n");
+  s+="<defs><linearGradient id='"+gid+"' gradientUnits='userSpaceOnUse' x1='0' y1='"+(gbase-18)+"' x2='0' y2='"+gbase+"'><stop offset='0' stop-color='#0f3f78' stop-opacity='.95'/><stop offset='.42' stop-color='#14508f' stop-opacity='.9'/><stop offset='.58' stop-color='#6fb1e0' stop-opacity='.4'/><stop offset='1' stop-color='#6fb1e0' stop-opacity='.3'/></linearGradient></defs>";
   let run=[];
   const flush=()=>{
     if(!run.length)return;
@@ -370,7 +371,7 @@ function drawChart(A,N,big){
     for(let i=1;i<pts.length-1;i++)d+=" Q"+pts[i].x+","+pts[i].y+" "+(pts[i].x+pts[i+1].x)/2+","+(pts[i].y+pts[i+1].y)/2;
     const q=pts[pts.length-1];
     d+=" L"+q.x+","+q.y+" L"+q.x+","+gbase+" Z";
-    s+="<path class='ga' d='"+d+"'/>";
+    s+="<path class='ga' fill='url(#"+gid+")' d='"+d+"'/>";
     run=[];
   };
   for(let k=1;k<=N;k++){
