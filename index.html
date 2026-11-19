@@ -45,6 +45,7 @@ dialog{max-width:480px;width:calc(100% - 24px);max-height:92vh;overflow:auto;bor
 .gb{fill:#2a7fc0}.ga{stroke:none}.gl{fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.rf{fill:#f5a3c3;opacity:.55;stroke:none}.hit{fill:transparent;cursor:pointer}
 .ow{fill:#b48ad9;opacity:.2}.eo{opacity:.5;stroke-dasharray:7 4}.pv{opacity:.65;stroke-dasharray:3 3}
 .leg{margin-top:10px}.leg summary{font-weight:600;cursor:pointer}.leg h3{font-size:13px;margin:12px 0 4px;color:var(--mute);text-transform:uppercase;letter-spacing:.04em}.lg li{display:flex;align-items:center;gap:10px;padding:3px 0;font-size:13px}.lg svg.sw{flex:0 0 28px;width:28px;height:16px;overflow:visible}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.r2 label{min-width:0}section>details>summary{font-size:18px}
 .small{font-size:13px;color:var(--mute);margin:8px 0 0}
 ul{list-style:none;margin:0;padding:0}
 li{display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
@@ -70,30 +71,27 @@ footer{padding:16px;font-size:13px;color:var(--mute)}
 <main id="app" hidden>
   <section id="status" class="band mid"><p id="st1"></p><p id="st2"></p></section>
 
-  <section>
-    <h2>Aujourd’hui</h2>
+  <section><details><summary>Aujourd’hui</summary>
     <div id="f1"></div>
-  </section>
+  </details></section>
 
-  <section>
-    <h2>Courbe du cycle</h2>
+  <section><details><summary>Courbe du cycle</summary>
     <div class="nav"><button id="cprev" class="alt" aria-label="Cycle précédent">‹</button><span id="cyclbl"></span><button id="cnext" class="alt" aria-label="Cycle suivant">›</button></div>
     <div class="nav2"><button id="bigopen" class="alt">Agrandir la courbe</button><button id="predopen" class="alt">Prédictions</button></div>
     <label class="chk"><input id="corr" type="checkbox" checked>Corriger selon l’heure de mesure</label>
     <div id="chart"></div>
     <label class="chk"><input id="interp" type="checkbox" checked>Afficher l’interprétation du décalage thermique</label>
     <label class="chk"><input id="retro" type="checkbox" checked>Afficher en rose la fenêtre réellement fertile (rétrospective : ovulation −5 à +1 jour)</label>
-    <details class="leg" open><summary>Estimation et interprétation</summary><p id="estnote" class="small"></p><p id="itxt" class="small"></p></details>
-<details class="leg" open><summary>Légende</summary><h3>Zones colorées</h3><ul class="lg"><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect class="fw" x="1" y="1" width="26" height="14" rx="2"/></svg><span>Période fertile (méthode Cyclamen)</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect class="inf" x="1" y="1" width="26" height="14" rx="2"/></svg><span>Période infertile</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect class="fw est" x="1" y="1" width="26" height="14" rx="2"/></svg><span>Période fertile estimée (cycle en cours, d’après l’ovulation estimée)</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect class="rf" x="1" y="1" width="26" height="14" rx="2"/></svg><span>Fenêtre réellement fertile, rétrospective (ovulation −5 à +1 jour)</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect class="ow" x="1" y="1" width="26" height="14" rx="2"/></svg><span>Plage d’ovulation estimée</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><line class="ov" x1="14" x2="14" y1="0" y2="16"/></svg><span>Jour d’ovulation estimé : trait plein si la température l’a confirmé</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><line class="ov eo" x1="14" x2="14" y1="0" y2="16"/></svg><span>Jour d’ovulation estimé : trait pâle si non confirmé</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect x="1" y="1" width="26" height="14" rx="2" fill="var(--mid)"/></svg><span>Aujourd’hui</span></li></ul><h3>Ligne « Interp. »</h3><ul class="lg"><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect x="1" y="1" width="26" height="14" rx="3" fill="#f0a12b"/><text x="14" y="12" text-anchor="middle" font-size="10" font-weight="700" fill="#222">F</text></svg><span>Jour fertile</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect x="1" y="1" width="26" height="14" rx="3" fill="#fbefb0"/><text x="14" y="12" text-anchor="middle" font-size="10" font-weight="700" fill="#222">Is</text></svg><span>Soir infertile, après observation de la journée</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect x="1" y="1" width="26" height="14" rx="3" fill="#ddd"/><text x="14" y="12" text-anchor="middle" font-size="10" font-weight="700" fill="#222">?</text></svg><span>Fertilité inconnue</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect x="1" y="1" width="26" height="14" rx="3" fill="#f3d86b"/><text x="14" y="12" text-anchor="middle" font-size="10" font-weight="700" fill="#222">Ij</text></svg><span>Jour infertile (dès le 3ᵉ matin de température haute et stable)</span></li></ul><h3>Température</h3><ul class="lg"><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><line class="ln" x1="2" x2="26" y1="8" y2="8"/><circle class="dt" cx="14" cy="8" r="3.5"/></svg><span>Température (corrigée selon l’heure si l’option est cochée)</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><line class="nm" x1="1" x2="27" y1="8" y2="8" stroke-width="1.5"/></svg><span>NMB : niveau moyen bas (moyenne des 6 points bas)</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><line class="th" x1="1" x2="27" y1="8" y2="8" stroke-width="1.5"/></svg><span>Trait haut (NMB + 0,3 °C)</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><circle class="dt" cx="14" cy="8" r="3"/><circle class="ring2" cx="14" cy="8" r="6.5"/></svg><span>Point bas retenu pour le NMB</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><circle class="dt" cx="14" cy="8" r="3"/><circle class="ring" cx="14" cy="8" r="6.5"/></svg><span>Points hauts du décalage thermique (3 points)</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><line class="nm pv" x1="1" x2="27" y1="5" y2="5" stroke-width="1.5"/><line class="th pv" x1="1" x2="27" y1="11" y2="11" stroke-width="1.5"/></svg><span>Lignes pâles : NMB et trait haut provisoires (cycle en cours, décalage non confirmé)</span></li></ul><h3>Règles, glaire, sensation</h3><ul class="lg"><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><path d="M1 15V12 L8 12 L20 12 L27 12 V15Z" fill="#c2493d" fill-opacity=".85"/></svg><span>Règles faibles : courbe rouge basse</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><path d="M1 15V7 L8 7 L20 7 L27 7 V15Z" fill="#c2493d" fill-opacity=".85"/></svg><span>Règles moyennes : courbe rouge à mi-hauteur</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><path d="M1 15V1 L8 1 L20 1 L27 1 V15Z" fill="#c2493d" fill-opacity=".85"/></svg><span>Règles abondantes : courbe rouge haute</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><text x="14" y="12" text-anchor="middle" font-size="11" font-weight="700" fill="var(--mute)">S</text></svg><span>Sensation sèche</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><text x="14" y="12" text-anchor="middle" font-size="11" font-weight="700" fill="#2a7fc0">H</text></svg><span>Sensation humide</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><text x="14" y="12" text-anchor="middle" font-size="11" font-weight="700" fill="#2a7fc0">M</text></svg><span>Sensation mouillée</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><text x="14" y="12" text-anchor="middle" font-size="11" font-weight="700" fill="#2a7fc0">L</text></svg><span>Sensation lubrifiée</span></li></ul><h3>Divers</h3><ul class="lg"><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><text class="un" x="14" y="13" text-anchor="middle" font-size="14">♥</text></svg><span>Union</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><text x="14" y="13" text-anchor="middle" font-size="11" fill="var(--ink)">▲</text></svg><span>Jour sommet</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><text x="14" y="13" text-anchor="middle" font-size="11" fill="var(--acc)">✎</text></svg><span>Note</span></li></ul><p class="small">Glissez le graphique pour voir tout le cycle ; appuyez longuement sur un jour pour voir et modifier ses valeurs.</p></details>
-  </section>
+    <details class="leg"><summary>Estimation et interprétation</summary><p id="stinfo" class="small"></p><p id="estnote" class="small"></p><p id="itxt" class="small"></p></details>
+<details class="leg"><summary>Légende</summary><h3>Zones colorées</h3><ul class="lg"><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect class="fw" x="1" y="1" width="26" height="14" rx="2"/></svg><span>Période fertile (méthode Cyclamen)</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect class="inf" x="1" y="1" width="26" height="14" rx="2"/></svg><span>Période infertile</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect class="fw est" x="1" y="1" width="26" height="14" rx="2"/></svg><span>Période fertile estimée (cycle en cours, d’après l’ovulation estimée)</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect class="rf" x="1" y="1" width="26" height="14" rx="2"/></svg><span>Fenêtre réellement fertile, rétrospective (ovulation −5 à +1 jour)</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect class="ow" x="1" y="1" width="26" height="14" rx="2"/></svg><span>Plage d’ovulation estimée</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><line class="ov" x1="14" x2="14" y1="0" y2="16"/></svg><span>Jour d’ovulation estimé : trait plein si la température l’a confirmé</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><line class="ov eo" x1="14" x2="14" y1="0" y2="16"/></svg><span>Jour d’ovulation estimé : trait pâle si non confirmé</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect x="1" y="1" width="26" height="14" rx="2" fill="var(--mid)"/></svg><span>Aujourd’hui</span></li></ul><h3>Ligne « Interp. »</h3><ul class="lg"><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect x="1" y="1" width="26" height="14" rx="3" fill="#f0a12b"/><text x="14" y="12" text-anchor="middle" font-size="10" font-weight="700" fill="#222">F</text></svg><span>Jour fertile</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect x="1" y="1" width="26" height="14" rx="3" fill="#fbefb0"/><text x="14" y="12" text-anchor="middle" font-size="10" font-weight="700" fill="#222">Is</text></svg><span>Soir infertile, après observation de la journée</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect x="1" y="1" width="26" height="14" rx="3" fill="#ddd"/><text x="14" y="12" text-anchor="middle" font-size="10" font-weight="700" fill="#222">?</text></svg><span>Fertilité inconnue</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><rect x="1" y="1" width="26" height="14" rx="3" fill="#f3d86b"/><text x="14" y="12" text-anchor="middle" font-size="10" font-weight="700" fill="#222">Ij</text></svg><span>Jour infertile (dès le 3ᵉ matin de température haute et stable)</span></li></ul><h3>Température</h3><ul class="lg"><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><line class="ln" x1="2" x2="26" y1="8" y2="8"/><circle class="dt" cx="14" cy="8" r="3.5"/></svg><span>Température (corrigée selon l’heure si l’option est cochée)</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><line class="nm" x1="1" x2="27" y1="8" y2="8" stroke-width="1.5"/></svg><span>NMB : niveau moyen bas (moyenne des 6 points bas)</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><line class="th" x1="1" x2="27" y1="8" y2="8" stroke-width="1.5"/></svg><span>Trait haut (NMB + 0,3 °C)</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><circle class="dt" cx="14" cy="8" r="3"/><circle class="ring2" cx="14" cy="8" r="6.5"/></svg><span>Point bas retenu pour le NMB</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><circle class="dt" cx="14" cy="8" r="3"/><circle class="ring" cx="14" cy="8" r="6.5"/></svg><span>Points hauts du décalage thermique (3 points)</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><line class="nm pv" x1="1" x2="27" y1="5" y2="5" stroke-width="1.5"/><line class="th pv" x1="1" x2="27" y1="11" y2="11" stroke-width="1.5"/></svg><span>Lignes pâles : NMB et trait haut provisoires (cycle en cours, décalage non confirmé)</span></li></ul><h3>Règles, glaire, sensation</h3><ul class="lg"><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><path d="M1 15V12 L8 12 L20 12 L27 12 V15Z" fill="#c2493d" fill-opacity=".85"/></svg><span>Règles faibles : courbe rouge basse</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><path d="M1 15V7 L8 7 L20 7 L27 7 V15Z" fill="#c2493d" fill-opacity=".85"/></svg><span>Règles moyennes : courbe rouge à mi-hauteur</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><path d="M1 15V1 L8 1 L20 1 L27 1 V15Z" fill="#c2493d" fill-opacity=".85"/></svg><span>Règles abondantes : courbe rouge haute</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><text x="14" y="12" text-anchor="middle" font-size="11" font-weight="700" fill="var(--mute)">S</text></svg><span>Sensation sèche</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><text x="14" y="12" text-anchor="middle" font-size="11" font-weight="700" fill="#2a7fc0">H</text></svg><span>Sensation humide</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><text x="14" y="12" text-anchor="middle" font-size="11" font-weight="700" fill="#2a7fc0">M</text></svg><span>Sensation mouillée</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><text x="14" y="12" text-anchor="middle" font-size="11" font-weight="700" fill="#2a7fc0">L</text></svg><span>Sensation lubrifiée</span></li></ul><h3>Divers</h3><ul class="lg"><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><text class="un" x="14" y="13" text-anchor="middle" font-size="14">♥</text></svg><span>Union</span></li><li><svg class="sw" viewBox="0 0 28 16" aria-hidden="true"><text x="14" y="13" text-anchor="middle" font-size="11" fill="var(--acc)">✎</text></svg><span>Note</span></li></ul><p class="small">Glissez le graphique pour voir tout le cycle ; appuyez longuement sur un jour pour voir et modifier ses valeurs.</p></details>
+  </details></section>
 
-  <section>
-    <h2>Jours du cycle affiché</h2>
+  <section><details><summary>Jours du cycle affiché</summary>
     <p class="small">Touchez un jour pour le modifier.</p>
     <ul id="hist"></ul>
-  </section>
+  </details></section>
 
-  <section><h2>Statistiques</h2><ul id="stats"></ul></section>
+  <section><details><summary>Statistiques</summary><ul id="stats"></ul></details></section>
   <section><details><summary>Réglages de la courbe</summary>
     <label>Correction horaire<select id="cm"><option value="perso">Personnalisée d’après vos cycles</option><option value="fixe">Pente fixe</option></select></label>
     <label>Pente fixe (°C par heure d’écart)<input id="coef" type="number" step="0.01" min="0" max="0.5"></label>
@@ -136,7 +134,7 @@ footer{padding:16px;font-size:13px;color:var(--mute)}
     </details>
   </section>
 
-  <footer>Estimation indicative : cette application ne remplace pas une méthode contraceptive. Version 1.9.0</footer>
+  <footer>Estimation indicative : cette application ne remplace pas une méthode contraceptive. Version 1.10.0</footer>
 </main>
 
 <div id="bigwrap" hidden><div class="bn"><button id="bprev" class="alt" aria-label="Cycle précédent">‹</button><span id="bigcyc"></span><button id="bnext" class="alt" aria-label="Cycle suivant">›</button><button id="bigclose">Fermer</button></div><div id="bigchart"></div></div>
@@ -292,7 +290,6 @@ function mq(e){
 function mucusPeak(c,K,lim){
   const q=k=>mq(data[addDays(c.s,k-1)]);
   let P=null,manual=false,seen=0,drops=0;
-  for(let k=1;k<=lim;k++)if((data[addDays(c.s,k-1)]||{}).js){P=k;manual=true;}
   if(P==null)for(let k=lim;k>=1;k--)if(q(k)>=2){P=k;break;}
   for(let k=1;k<=K;k++)if(q(k)!=null)seen++;
   if(P!=null)for(let k=P+1;k<=K;k++){const v=q(k);if(v!=null&&v<2)drops++;}
@@ -369,7 +366,7 @@ function render(){
   if(!C.length){
     band.className="band mid";
     $("#st1").textContent="Le suivi démarre avec vos règles";
-    $("#st2").textContent="Enregistrez le premier jour des règles pour lancer le cycle.";
+    $("#st2").textContent="Enregistrez le premier jour des règles pour lancer le cycle.";$("#stinfo").textContent="";
     $("#chart").innerHTML="";$("#cyclbl").textContent="";$("#retro").parentElement.style.display="none";
   }else{
     const cur=analyse(C,C.length-1),n=diff(t,cur.s)+1,dd=k=>fr(addDays(cur.s,k-1));
@@ -383,14 +380,14 @@ function render(){
     else{cls="mid";a="Fertilité inconnue aujourd’hui";b="Pas d’observation notée, lendemain d’union ou règles. "+est;}
     band.className="band "+cls;
     $("#st1").textContent=a;
-    $("#st2").textContent="Jour "+n+" du cycle. "+b;
+    $("#st2").textContent="Jour "+n+" du cycle.";$("#stinfo").textContent="Cycle en cours : "+b;
     A=analyse(C,C.length-1-back);
     const N=A.e?A.len:Math.max(A.L,n,...A.T.map(x=>x.n))+1;
     $("#cyclbl").textContent=A.e?"Cycle du "+fr(A.s)+" au "+fr(addDays(A.e,-1))+" ("+A.len+" jours)":"Cycle en cours, depuis le "+fr(A.s);
     lastA=A;lastN=N;drawChart(A,N);if(!$("#bigwrap").hidden)drawChart(A,N,true);explain(A);
   }
   $("#cprev").disabled=back>=C.length-1;$("#cnext").disabled=back===0;$("#bprev").disabled=$("#cprev").disabled;$("#bnext").disabled=$("#cnext").disabled;$("#bigcyc").textContent=$("#cyclbl").textContent;stats(C);cinfo();
-  const has=d=>data[d].t!=null||data[d].m||data[d].p||data[d].un||data[d].nt||data[d].mo||data[d].js||data[d].gp||data[d].w!=null;
+  const has=d=>data[d].t!=null||data[d].m||data[d].p||data[d].un||data[d].nt||data[d].mo||data[d].gp||data[d].w!=null;
   const keys=Object.keys(data).filter(d=>has(d)&&(!A||(d>=A.s&&(!A.e||d<A.e)))).sort().reverse().slice(0,A?100:14);
   $("#hist").innerHTML=keys.length?keys.map(d=>{
     const e=data[d];
@@ -450,7 +447,6 @@ function drawChart(A,N,big){
     s+="<text class='lb' x='"+X+"' y='"+(Yb+14)+"' text-anchor='middle' font-weight='700' font-size='10'>"+k+"</text>";
     const sl={seche:"S","crémeuse":"H",filant:"M",lubrifie:"L"}[e.m];
     if(sl)s+="<text x='"+X+"' y='"+(Yb+76)+"' text-anchor='middle' font-size='12' font-weight='700' fill='"+(e.m==="seche"?"var(--mute)":"#2a7fc0")+"'>"+sl+"</text>";
-    if(e.js)s+="<text x='"+X+"' y='"+(Yb+90)+"' text-anchor='middle' font-size='11' fill='var(--ink)'>▲</text>";
     if(e.nt)s+="<text x='"+X+"' y='"+(Yb+103)+"' text-anchor='middle' font-size='11' fill='var(--acc)'>✎</text>";
   }
   const gbase=Yb+56,GH={rien:3,epaisse:8,elastique:18},PL={2:6,3:12,4:18};
@@ -484,14 +480,13 @@ function drawChart(A,N,big){
 }
 
 /* Saisie : formulaire du jour (préfixe "") et fenêtre de modification d’un jour donné (préfixe "m") */
-const FORM=p=>`<label>Température au réveil (°C)<input id="${p}temp" inputmode="decimal" placeholder="36,45"></label>
-<label>Heure de la mesure<input id="${p}hour" type="time"></label>
+const FORM=p=>`<div class="r2"><label>Température (°C)<input id="${p}temp" inputmode="decimal" placeholder="36,45"></label>
+<label>Heure<input id="${p}hour" type="time"></label></div>
 <label class="chk"><input id="${p}xcl" type="checkbox">Température perturbée (à ignorer)</label>
-<label>Sensation<select id="${p}mucus"><option value="">Non notée</option><option value="seche">Sèche (S)</option><option value="crémeuse">Humide (H)</option><option value="filant">Mouillée (M)</option><option value="lubrifie">Lubrifiée (L)</option></select></label>
-<label>Glaire<select id="${p}obs"><option value="">Non notée</option><option value="rien">Rien vu</option><option value="epaisse">Épaisse</option><option value="elastique">Filante</option></select></label>
+<div class="r2"><label>Sensation<select id="${p}mucus"><option value="">Non notée</option><option value="seche">Sèche (S)</option><option value="crémeuse">Humide (H)</option><option value="filant">Mouillée (M)</option><option value="lubrifie">Lubrifiée (L)</option></select></label>
+<label>Glaire<select id="${p}obs"><option value="">Non notée</option><option value="rien">Rien vu</option><option value="epaisse">Épaisse</option><option value="elastique">Filante</option></select></label></div>
 <label>Règles<select id="${p}period"><option value="0">Aucune</option><option value="2">Faibles</option><option value="3">Moyennes</option><option value="4">Abondantes</option></select></label>
 <label class="chk"><input id="${p}union" type="checkbox">Union</label>
-<label class="chk"><input id="${p}js" type="checkbox">Jour sommet (dernier jour de glaire mouillée, noté après coup)</label>
 <label class="chk"><input id="${p}gp" type="checkbox">Conception : grossesse issue de ce cycle</label>
 <label>Poids (kg, facultatif)<input id="${p}kg" inputmode="decimal"></label>
 <label>Note ou événement<input id="${p}note" maxlength="200" placeholder="nuit hachée, voyage…"></label>
@@ -503,14 +498,14 @@ function fill(p,d){
   g("hour").value=e.h||((d===today()&&e.t==null)?nowHM():"");
   g("mucus").value=e.m||"";g("obs").value=e.mo||"";
   g("period").value=e.p===true?3:(e.p===1?2:(e.p||0));
-  g("union").checked=!!e.un;g("js").checked=!!e.js;g("gp").checked=!!e.gp;g("xcl").checked=!!e.x;
+  g("union").checked=!!e.un;g("gp").checked=!!e.gp;g("xcl").checked=!!e.x;
   g("kg").value=e.w!=null?String(e.w).replace(".",","):"";g("note").value=e.nt||"";g("msg").textContent="";
 }
 async function saveDay(p,d){
   const g=id=>$("#"+p+id),t=parseFloat(g("temp").value.replace(",",".")),w=parseFloat(g("kg").value.replace(",","."));
   if(!isNaN(t)&&(t<34||t>42)){g("msg").textContent="Température hors limites (34 à 42 °C).";return;}
-  const e={t:isNaN(t)?null:t,h:isNaN(t)?null:(g("hour").value||null),m:g("mucus").value,p:+g("period").value,un:g("union").checked,x:!isNaN(t)&&g("xcl").checked,nt:g("note").value.trim(),mo:g("obs").value,js:g("js").checked,gp:g("gp").checked,w:isNaN(w)?null:w,u:Date.now()};
-  const vide=e.t==null&&!e.m&&!e.p&&!e.un&&!e.nt&&!e.mo&&!e.js&&!e.gp&&e.w==null;
+  const e={t:isNaN(t)?null:t,h:isNaN(t)?null:(g("hour").value||null),m:g("mucus").value,p:+g("period").value,un:g("union").checked,x:!isNaN(t)&&g("xcl").checked,nt:g("note").value.trim(),mo:g("obs").value,gp:g("gp").checked,w:isNaN(w)?null:w,u:Date.now()};
+  const vide=e.t==null&&!e.m&&!e.p&&!e.un&&!e.nt&&!e.mo&&!e.gp&&e.w==null;
   if(vide&&!data[d]){g("msg").textContent="Rien à enregistrer.";return;}
   logChange(d,data[d]);data[d]=e;
   await persist();render();g("msg").textContent=vide?"Jour effacé":"Enregistré";sync();
@@ -775,7 +770,7 @@ function explain(A){
   if(!$("#interp").checked){el.innerHTML="";return;}
   const mk=o.mk,L=[];
   L.push(A.gs?"<b>Ouverture</b> : première glaire sentie ou vue au jour "+A.gs+" ; le couple est fertile à partir de ce jour.":"<b>Ouverture</b> : aucune glaire sentie ou vue notée ce cycle.");
-  L.push(mk.P!=null?"<b>Pic de glaire</b> : dernier jour de glaire de type fertile (mouillée, lubrifiée ou filante) au jour "+mk.P+(mk.manual?" (jour sommet noté par vous)":"")+" ; "+(mk.drops?mk.drops+" jour(s) suivant(s) avec une glaire moins fertile.":"aucun jour suivant noté avec une glaire moins fertile pour l’instant."):"<b>Pic de glaire</b> : "+(mk.seen?"aucun jour de glaire de type fertile noté.":"aucune glaire notée ce cycle (ce n’est pas bloquant : la température suffit)."));
+  L.push(mk.P!=null?"<b>Pic de glaire</b> : dernier jour de glaire de type fertile (mouillée, lubrifiée ou filante) au jour "+mk.P+""+" ; "+(mk.drops?mk.drops+" jour(s) suivant(s) avec une glaire moins fertile.":"aucun jour suivant noté avec une glaire moins fertile pour l’instant."):"<b>Pic de glaire</b> : "+(mk.seen?"aucun jour de glaire de type fertile noté.":"aucune glaire notée ce cycle (ce n’est pas bloquant : la température suffit)."));
   if(A.sh){
     const b=A.sh,T=A.T,lw=b.low.map(j=>T[j]).sort((x,y)=>x.n-y.n),hi=T.slice(b.i,b.c+1);
     L.push("<b>Niveau moyen bas (NMB)</b> : moyenne des 6 points les plus bas"+(cfg.cons?" consécutifs":"")+" avant le décalage (jours "+lw.map(x=>x.n).join(", ")+") = "+num(b.base)+" °C.");
@@ -835,6 +830,7 @@ function longPress(box){
   box.addEventListener("contextmenu",e=>e.preventDefault());
 }
 longPress($("#chart"));longPress($("#bigchart"));
+$("#chart").closest("details").addEventListener("toggle",e=>{if(e.target.open&&lastA)drawChart(lastA,lastN);});
 $("#bigopen").onclick=()=>{$("#bigwrap").hidden=false;if(lastA)drawChart(lastA,lastN,true);};
 $("#bigclose").onclick=()=>{$("#bigwrap").hidden=true;};
 addEventListener("keydown",e=>{if($("#bigwrap").hidden||$("#dlg").open)return;if(e.key==="Escape")$("#bigwrap").hidden=true;else if(e.key==="ArrowLeft")$("#bprev").click();else if(e.key==="ArrowRight")$("#bnext").click();});
